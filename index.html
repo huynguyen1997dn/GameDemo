@@ -557,88 +557,20 @@
       log('=== 🎰 SPIN ===', 'combo');
       log(`📊 Stage ${g.stage} | Turn ${g.turn + 1}/${SPINS_PER_STAGE}`, 'combo');
 
-      // Step 1: Draft first (pick 1 → board)
-      await startDraft();
+      // Step 1: Draft from inventory → place on grid
+      const result = await startDraft();
 
-      // Step 2: Take 1 item from inventory
-      const idx = Math.floor(Math.random() * g.inventory.length);
-      const taken = g.inventory.splice(idx, 1)[0];
-      const newItem = { ...taken };
-
-      // Step 3: Show placement overlay (Place / Skip / Sell / Replace)
-      renderGrid();
-      const decision = await showPlacementOverlay(newItem.id);
-
-      if (decision.action === 'skip') {
-        g.addToInventory(newItem.id);
-        log(`⏭ Bỏ qua: ${newItem.name} (trả lại kho)`, 'combo');
-        renderDashboard();
+      if (result === 'skip' || result === 'sell') {
         isSpinning = false;
         document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE;
         document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
         return;
       }
-
-      if (decision.action === 'sell') {
-        g.score += newItem.base || 0;
-        log(`💰 Bán: ${newItem.name} +${newItem.base||0} điểm`, 'combo');
-        renderDashboard();
-        isSpinning = false;
-        document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE;
-        document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
-        return;
-      }
-
-      // Step 4: Place or Replace item on grid
-      let targetR, targetC;
-      if (decision.action === 'replace') {
-        targetR = decision.r;
-        targetC = decision.c;
-        const oldItem = g.grid[targetR][targetC];
-        if (oldItem) log(`🔄 Thay thế: ${oldItem.name} → ${newItem.name}`, 'combo');
-      } else {
-        const empty = getEmptyCells();
-        if (empty.length === 0) {
-          showToast('Grid đã đầy! Item trả lại kho.');
-          g.addToInventory(newItem.id);
-          renderDashboard();
-          isSpinning = false;
-          document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE;
-          document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
-          return;
-        }
-        const [ec] = empty.splice(Math.floor(Math.random() * empty.length), 1);
-        targetR = ec[0]; targetC = ec[1];
-        log(`📥 Rút: ${newItem.name} vào ô [${targetR+1},${targetC+1}]`, 'combo');
-      }
-
-      // Step 5: Shuffle existing items (excluding target cell)
-      const oldItems = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          if (g.grid[r][c] && (r !== targetR || c !== targetC)) {
-            oldItems.push({ item: g.grid[r][c], r, c });
-            g.grid[r][c] = null;
-          }
-
-      const allCells = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          if (r !== targetR || c !== targetC) allCells.push([r, c]);
-
-      shuffleArray(allCells);
-      for (let i = 0; i < Math.min(oldItems.length, allCells.length); i++) {
-        const [r, c] = allCells[i];
-        g.grid[r][c] = oldItems[i].item;
-      }
-
-      // Place new item
-      g.grid[targetR][targetC] = newItem;
 
       renderGrid();
       await delay(400);
 
-      // Step 6: Animated evaluation
+      // Step 2: Animated evaluation
       await animatedEvaluate();
 
       // Step 7: Finalize turn
@@ -921,41 +853,29 @@
     // ============================================================
     // DRAFT
     // ============================================================
-    async function startDraft() {
-      // Stage-aware draft: early stages favor easy combo items
-      const stage = g.stage;
-      const pool = Object.values(ItemDB).filter(it => {
-        if (it.rarity === 'cực_hiếm' && Math.random() > 0.1 + stage * 0.05) return false;
-        if (stage <= 2 && it.faction === 'overload' && Math.random() > 0.3) return false;
-        if (stage <= 1 && it.faction === 'trash' && it.id !== 'tui_hanh_khat') return false;
-        return true;
-      });
-
-      // Weight by stage: harder items appear more in later stages
-      let baseWeights = { thường: 50, trung_bình: 30, hiếm: 15, cực_hiếm: 5 };
-      if (stage >= 3) { baseWeights.hiếm = 25; baseWeights.cực_hiếm = 12; }
-      if (stage >= 5) { baseWeights.cực_hiếm = 20; }
-
-      const weighted = [];
-      for (const it of pool) {
-        const w = baseWeights[it.rarity] || 10;
-        for (let i = 0; i < w; i++) weighted.push(it);
-      }
-      const chosen = [];
-      const seen = new Set();
-      while (chosen.length < 3 && weighted.length > 0) {
-        const pick = weighted[Math.floor(Math.random() * weighted.length)];
-        if (!seen.has(pick.id)) { seen.add(pick.id); chosen.push(pick); }
-      }
-      while (chosen.length < 3 && pool.length > 0) {
-        for (const it of pool) {
-          if (!seen.has(it.id)) { chosen.push(it); seen.add(it.id); if (chosen.length >= 3) break; }
+    function startDraft() {
+      return new Promise((resolve) => {
+        // Pick up to 3 unique items from inventory
+        const uniqueItems = [];
+        const seen = new Set();
+        for (const it of g.inventory) {
+          if (!seen.has(it.id)) {
+            seen.add(it.id);
+            uniqueItems.push(ItemDB[it.id]);
+          }
         }
-      }
-      showDraft(chosen);
+        if (uniqueItems.length === 0) {
+          showToast('Kho đồ trống! Không thể chọn.');
+          resolve('skip');
+          return;
+        }
+        shuffleArray(uniqueItems);
+        const chosen = uniqueItems.slice(0, Math.min(3, uniqueItems.length));
+        showDraft(chosen, resolve);
+      });
     }
 
-    function showDraft(items) {
+    function showDraft(items, resolveDraft) {
       const overlay = document.getElementById('draftOverlay');
       const container = document.getElementById('draftCards');
       container.innerHTML = '';
@@ -974,21 +894,122 @@
           <div class="text-lg font-bold ${it.base>0?'text-green-400':'text-gray-400'}">${it.base>0?'+'+it.base:'+0'}</div>
           <div class="text-[10px] text-gray-500 mt-2 leading-tight">${it.desc||''}</div>
         `;
-        card.onclick = () => selectDraft(it.id);
+        card.onclick = () => selectDraft(it.id, resolveDraft);
         container.appendChild(card);
       }
     }
 
-    async function selectDraft(id) {
-      const result = g.placeOnBoard(id);
-      if (result === 'grid') {
-        log(`📦 Nhận: ${ItemDB[id].name} (lên board)`, 'combo');
-        renderGrid();
-      } else {
-        log(`📦 Nhận: ${ItemDB[id].name} (vào kho vì grid đầy)`, 'combo');
+    async function selectDraft(id, resolveDraft) {
+      // Remove item from inventory
+      const idx = g.inventory.findIndex(it => it.id === id);
+      if (idx === -1) {
+        showToast('Item không còn trong kho!');
+        resolveDraft('skip');
+        return;
       }
+      const item = g.inventory.splice(idx, 1)[0];
       closeDraft();
+      renderGrid();
+
+      const empty = getEmptyCells();
+      if (empty.length > 0) {
+        const [ec] = empty.splice(Math.floor(Math.random() * empty.length), 1);
+        const targetR = ec[0];
+        const targetC = ec[1];
+        log(`📥 Đặt: ${item.name} vào ô [${targetR+1},${targetC+1}]`, 'combo');
+
+        const oldItems = [];
+        for (let r = 0; r < 5; r++)
+          for (let c = 0; c < 5; c++)
+            if (g.grid[r][c] && (r !== targetR || c !== targetC)) {
+              oldItems.push({ item: g.grid[r][c], r, c });
+              g.grid[r][c] = null;
+            }
+
+        const allCells = [];
+        for (let r = 0; r < 5; r++)
+          for (let c = 0; c < 5; c++)
+            if (r !== targetR || c !== targetC) allCells.push([r, c]);
+
+        shuffleArray(allCells);
+        for (let i = 0; i < Math.min(oldItems.length, allCells.length); i++) {
+          const [r, c] = allCells[i];
+          g.grid[r][c] = oldItems[i].item;
+        }
+
+        g.grid[targetR][targetC] = item;
+        renderGrid();
+        renderDashboard();
+        resolveDraft('placed');
+        return;
+      }
+
+      // Board is full → show placement overlay for swap/sell/skip
+      const decision = await showPlacementOverlay(id);
+
+      if (decision.action === 'skip') {
+        g.addToInventory(id);
+        log(`⏭ Bỏ qua: ${item.name} (trả lại kho)`, 'combo');
+        renderDashboard();
+        resolveDraft('skip');
+        return;
+      }
+
+      if (decision.action === 'sell') {
+        g.score += item.base || 0;
+        log(`💰 Bán: ${item.name} +${item.base||0} điểm`, 'combo');
+        renderDashboard();
+        resolveDraft('sell');
+        return;
+      }
+
+      // Place or Replace on grid
+      let targetR, targetC;
+      if (decision.action === 'replace') {
+        targetR = decision.r;
+        targetC = decision.c;
+        const oldItem = g.grid[targetR][targetC];
+        if (oldItem) log(`🔄 Thay thế: ${oldItem.name} → ${item.name}`, 'combo');
+      } else {
+        const empty = getEmptyCells();
+        if (empty.length === 0) {
+          showToast('Grid đã đầy! Item trả lại kho.');
+          g.addToInventory(id);
+          renderDashboard();
+          resolveDraft('skip');
+          return;
+        }
+        const [ec] = empty.splice(Math.floor(Math.random() * empty.length), 1);
+        targetR = ec[0]; targetC = ec[1];
+        log(`📥 Đặt: ${item.name} vào ô [${targetR+1},${targetC+1}]`, 'combo');
+      }
+
+      // Shuffle existing items (excluding target cell)
+      const oldItems = [];
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++)
+          if (g.grid[r][c] && (r !== targetR || c !== targetC)) {
+            oldItems.push({ item: g.grid[r][c], r, c });
+            g.grid[r][c] = null;
+          }
+
+      const allCells = [];
+      for (let r = 0; r < 5; r++)
+        for (let c = 0; c < 5; c++)
+          if (r !== targetR || c !== targetC) allCells.push([r, c]);
+
+      shuffleArray(allCells);
+      for (let i = 0; i < Math.min(oldItems.length, allCells.length); i++) {
+        const [r, c] = allCells[i];
+        g.grid[r][c] = oldItems[i].item;
+      }
+
+      // Place new item
+      g.grid[targetR][targetC] = item;
+
+      renderGrid();
       renderDashboard();
+      resolveDraft('placed');
     }
 
     function closeDraft() {
@@ -1015,7 +1036,8 @@
         document.getElementById('placementBase').textContent = 'Base: +' + (def.base || 0);
         document.getElementById('placementDesc').textContent = def.desc || '';
         document.getElementById('replaceModeText').classList.add('hidden');
-        document.getElementById('placeBtn').textContent = '📍 Đặt lên Board';
+        // Board is full → only allow swap/sell/skip
+        document.getElementById('placeBtn').textContent = '🔄 Swap (Thay thế)';
         document.getElementById('placeBtn').disabled = false;
 
         document.getElementById('placementOverlay').classList.remove('hidden');
