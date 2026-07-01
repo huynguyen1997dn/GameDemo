@@ -267,8 +267,8 @@
         for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='meo_thuong'){ g.permCatBonus+=5; ctx.consume('meo_thuong'); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 5, 'consume'); ctx.log('🐅 Vua Mèo nuốt Mèo Thường! +5 vĩnh viễn', 'cats'); break; } } } });
 
     def('meo_tam_the', { name:'Mèo Tam Thể (May Mắn)', faction:F.CATS, rarity:r(3), base:2, emoji:'🐾',
-      desc:'+1 cho mỗi item Hệ May Rủi trên lưới.',
-      onEval(ctx){ let n=0; const g=ctx.g; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK) n++; } if(n>0){ ctx.addScore(n); ctx.log('🐾 Mèo Tam Thể: +'+n+' từ May Rủi', 'cats'); } } });
+      desc:'+1 cho mỗi item Hệ May Rủi trên lưới, sau đó tự hủy.',
+      onEval(ctx){ let n=0; const g=ctx.g; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK) n++; } if(n>0){ ctx.addScore(n); ctx.log('🐾 Mèo Tam Thể: +'+n+' từ May Rủi', 'cats'); } ctx.consume(ctx.item.id); ctx.log('🐾 Mèo Tam Thể tự hủy!', 'cats'); } });
 
     def('qua_trung', { name:'Quả Trứng', faction:F.CATS, rarity:r(0), base:0, emoji:'🥚',
       desc:'5% (20% Bùa) nở thành Chim Sẻ/Gà Con, để lại Vỏ Trứng.',
@@ -283,8 +283,8 @@
       onEval(ctx){ for(const n of ctx.n8){ const it=ctx.g.grid[n.r][n.c]; if(it&&it.faction===F.CATS&&!['qua_trung','chim_se','ga_con','co_meo'].includes(it.id)){ ctx.addScore(35); ctx.consume('ga_con'); ctx.addAnim(n.r, n.c, ctx.r, ctx.c, 35, 'attack'); ctx.log('🐤 Gà Con bị '+it.name+' bắt! +35', 'cats'); return; } } } });
 
     def('co_meo', { name:'Cỏ Mèo (Catnip)', faction:F.CATS, rarity:r(0), base:1, emoji:'🌿',
-      desc:'x2 điểm Mèo cạnh hình chữ thập.',
-      adjEffect(ctx){ const dirs=[[-1,0],[1,0],[0,-1],[0,1]]; const g=ctx.g; for(const d of dirs){ const nr=ctx.r+d[0],nc=ctx.c+d[1]; if(nr>=0&&nr<5&&nc>=0&&nc<5){ const it=g.grid[nr][nc]; if(it&&it.faction===F.CATS){ const bonus=(it.score||it.base); it.score=bonus*2; ctx.addScore(bonus); ctx.addAnim(ctx.r, ctx.c, nr, nc, bonus, 'buff'); ctx.log('🌿 Cỏ Mèo x2 '+it.name+'! +'+bonus, 'cats'); } } } } });
+      desc:'x2 điểm Mèo cạnh hình chữ thập, sau đó tự hủy.',
+      adjEffect(ctx){ const dirs=[[-1,0],[1,0],[0,-1],[0,1]]; const g=ctx.g; for(const d of dirs){ const nr=ctx.r+d[0],nc=ctx.c+d[1]; if(nr>=0&&nr<5&&nc>=0&&nc<5){ const it=g.grid[nr][nc]; if(it&&it.faction===F.CATS){ const bonus=(it.score||it.base); it.score=bonus*2; ctx.addScore(bonus); ctx.addAnim(ctx.r, ctx.c, nr, nc, bonus, 'buff'); ctx.log('🌿 Cỏ Mèo x2 '+it.name+'! +'+bonus, 'cats'); } } } ctx.consume(ctx.item.id); ctx.log('🌿 Cỏ Mèo tự hủy!', 'cats'); } });
 
     // ======================== SAGES ========================
     def('danh_tuong', { name:'Danh Tướng / Hiệp Khách', faction:F.SAGES, rarity:r(5), base:4, emoji:'⚔️',
@@ -297,8 +297,8 @@
       } } });
 
     def('van_nhan', { name:'Văn Nhân / Thi Sĩ', faction:F.SAGES, rarity:r(3), base:3, emoji:'📜',
-      desc:'Cạnh Cây Trúc/Măng Non/Bức Tranh: x3 bản thân, x2 vật phẩm đó.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='cay_truc'||it.id==='mang_non'||it.id==='buc_tranh')){ const selfBonus=(ctx.item.score||ctx.item.base)*2; ctx.addScore(selfBonus); const adjBonus=(it.score||it.base); it.score=adjBonus*2; ctx.addAnim(ctx.r, ctx.c, n.r, n.c, adjBonus, 'buff'); ctx.log('📜 Văn Nhân khơi nguồn cảm hứng! +'+(selfBonus+adjBonus), 'sages'); return; } } } });
+      desc:'Cạnh Cây Trúc/Măng Non/Bức Tranh: x3 bản thân, x2 vật phẩm đó, sau đó tự hủy.',
+      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='cay_truc'||it.id==='mang_non'||it.id==='buc_tranh')){ const selfBonus=(ctx.item.score||ctx.item.base)*2; ctx.addScore(selfBonus); const adjBonus=(it.score||it.base); it.score=adjBonus*2; ctx.addAnim(ctx.r, ctx.c, n.r, n.c, adjBonus, 'buff'); ctx.log('📜 Văn Nhân khơi nguồn cảm hứng! +'+(selfBonus+adjBonus), 'sages'); ctx.consume(ctx.item.id); ctx.log('📜 Văn Nhân tự hủy!', 'sages'); return; } } } });
 
     def('thuong_nhan', { name:'Thương Nhân', faction:F.SAGES, rarity:r(3), base:2, emoji:'👨‍💼',
       desc:'Tiêu thụ Tơ Lụa/Hộp Trà/Ngọc Thạch: 4x điểm gốc.',
@@ -317,8 +317,8 @@
       onEval(ctx){ const g=ctx.g; let coins=0, pts=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.id==='dong_xu_dong'){ coins++; pts+=5; ctx.consume('dong_xu_dong'); ctx.addAnim(ctx.r, ctx.c, r, c, 5, 'consume'); } } if(coins>0){ ctx.addScore(pts); ctx.log('🗡️ Đạo Tặc ăn '+coins+' Đồng Xu! +'+pts, 'sages'); } } });
 
     def('thay_boi', { name:'Thầy Bói / Phương Sĩ', faction:F.SAGES, rarity:r(5), base:2, emoji:'🔮',
-      desc:'x2 điểm tất cả item Hệ May Rủi trên lưới.',
-      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK){ const bonus=it.score||it.base; total+=bonus; it.score=(it.score||it.base)*2; ctx.addAnim(ctx.r, ctx.c, r, c, bonus, 'buff'); } } if(total>0) ctx.log('🔮 Thầy Bói x2 điểm Hệ May Rủi! +'+total, 'sages'); } });
+      desc:'x2 điểm tất cả item Hệ May Rủi trên lưới, sau đó tự hủy.',
+      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK){ const bonus=it.score||it.base; total+=bonus; it.score=(it.score||it.base)*2; ctx.addAnim(ctx.r, ctx.c, r, c, bonus, 'buff'); } } if(total>0) ctx.log('🔮 Thầy Bói x2 điểm Hệ May Rủi! +'+total, 'sages'); ctx.consume(ctx.item.id); ctx.log('🔮 Thầy Bói tự hủy!', 'sages'); } });
 
     def('lao_an_may', { name:'Lão Ăn Mày / Khất Cái', faction:F.SAGES, rarity:r(5), base:1, emoji:'🧑‍🦯',
       desc:'Ăn rác: +5 vĩnh viễn/rác. 10 rác → Kỳ Nhân Ẩn Thế (+150).',
@@ -354,6 +354,17 @@
     def('to_lua', { name:'Tơ Lụa / Hộp Trà', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🧣', desc:'Nhiên liệu cho Thương Nhân. 30% để lại Bã Trà.' });
     def('ngoc_thach', { name:'Ngọc Thạch', faction:F.CONSUMABLE, rarity:r(3), base:3, emoji:'💚', desc:'Đá quý cho Thương Nhân giao dịch 4x.' });
 
+    // ======================== EQUIPMENT ========================
+    def('cung_ten', { name:'Cung Tên', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🏹',
+      desc:'Cạnh Danh Tướng: +35 điểm, tự hủy.',
+      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=35; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🏹 Cung Tên được Danh Tướng sử dụng! +'+pts, 'sages'); return; } } } });
+    def('giap_sat', { name:'Giáp Sắt', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🛡️',
+      desc:'Cạnh Danh Tướng: +25 điểm, tự hủy.',
+      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=25; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🛡️ Giáp Sắt được Danh Tướng trang bị! +'+pts, 'sages'); return; } } } });
+    def('chien_ma', { name:'Chiến Mã', faction:F.CONSUMABLE, rarity:r(3), base:2, emoji:'🐎',
+      desc:'Cạnh Danh Tướng: +40 điểm, tự hủy.',
+      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=40; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🐎 Chiến Mã được Danh Tướng cưỡi! +'+pts, 'sages'); return; } } } });
+
     // ======================== TREASURES ========================
     def('tuong_dat', { name:'Tượng Đất', faction:F.TREASURE, rarity:r(0), base:0, emoji:'🗿', desc:'Bị Thợ Mỏ/Danh Tướng đập → Bảo Vật Thượng Cổ.' });
     def('bao_vat_thuong_co', { name:'Bảo Vật Thượng Cổ', faction:F.TREASURE, rarity:r(5), base:50, emoji:'💎', desc:'+50 điểm mỗi vòng.' });
@@ -364,8 +375,8 @@
       desc:'3 vòng sau mở: +200 điểm, tự hủy.',
       onEval(ctx){ const g=ctx.g; g.chestTurn=(g.chestTurn||0)+1; if(g.chestTurn>=3){ ctx.addScore(200); ctx.consume('ruong_bau'); g.chestTurn=0; ctx.addAnim(ctx.r, ctx.c, ctx.r, ctx.c, 200, 'self'); ctx.log('🧰 Rương Báu mở! +200 điểm!', 'treasure'); } } });
     def('ngoc_ty', { name:'Ngọc Tỷ Truyền Quốc', faction:F.TREASURE, rarity:r(6), base:10, emoji:'👑',
-      desc:'x3 tổng điểm Hệ Danh Sĩ trên lưới.',
-      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.SAGES) total+=it.score||it.base; } if(total>0){ ctx.addScore(total*2); ctx.log('👑 Ngọc Tỷ x3 Danh Sĩ! +'+(total*2), 'treasure'); } } });
+      desc:'x3 tổng điểm Hệ Danh Sĩ trên lưới, sau đó tự hủy.',
+      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.SAGES) total+=it.score||it.base; } if(total>0){ ctx.addScore(total*2); ctx.log('👑 Ngọc Tỷ x3 Danh Sĩ! +'+(total*2), 'treasure'); } ctx.consume(ctx.item.id); ctx.log('👑 Ngọc Tỷ tự hủy!', 'treasure'); } });
 
     // ======================== LUCK ========================
     def('dong_xu_dong', { name:'Đồng Xu Đồng', faction:F.LUCK, rarity:r(0), base:1, emoji:'🪙', desc:'Bị Đạo Tặc/Tỳ Hưu ăn mất.' });
@@ -414,8 +425,8 @@
     def('ba_tra', { name:'Bã Trà', faction:F.TRASH, rarity:r(0), base:0, emoji:'🫖', desc:'Rác.' });
     def('manh_vun_vai', { name:'Mảnh Vụn Vải', faction:F.TRASH, rarity:r(0), base:0, emoji:'🧵', desc:'Rác.' });
     def('tui_hanh_khat', { name:'Túi Hành Khất Phong Thủy', faction:F.TRASH, rarity:r(3), base:2, emoji:'🎒',
-      desc:'+4/rác trên lưới. ≥5 rác: x2.',
-      onEval(ctx){ const g=ctx.g; let trash=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.TRASH) trash++; } const pts=trash*4; ctx.addScore(pts); if(trash>=5){ ctx.addScore((ctx.item.score||ctx.item.base)); ctx.log('🎒 Túi Hành Khất: +'+pts+' (x2 vì ≥5 rác)', 'trash'); } else { ctx.log('🎒 Túi Hành Khất: +'+pts, 'trash'); } } });
+      desc:'+4/rác trên lưới. ≥5 rác: x2. Sau đó tự hủy.',
+      onEval(ctx){ const g=ctx.g; let trash=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.TRASH) trash++; } const pts=trash*4; ctx.addScore(pts); if(trash>=5){ ctx.addScore((ctx.item.score||ctx.item.base)); ctx.log('🎒 Túi Hành Khất: +'+pts+' (x2 vì ≥5 rác)', 'trash'); } else { ctx.log('🎒 Túi Hành Khất: +'+pts, 'trash'); } ctx.consume(ctx.item.id); ctx.log('🎒 Túi Hành Khất tự hủy!', 'trash'); } });
 
     // ============================================================
     // GAME STATE
@@ -466,7 +477,8 @@
           'tho_mo','quang_tho',
           'lao_an_may','bao_tai_rach','tui_hanh_khat','than_y',
           'meo_tam_the','thoi_vang','ngoc_thach',
-          'binh_gom_co','cui_kho_la_ua','meo_thuong'
+          'binh_gom_co','cui_kho_la_ua','meo_thuong',
+          'cung_ten','giap_sat','chien_ma'
         ];
         for(const id of starter) this.addToInventory(id);
       }
