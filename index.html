@@ -1,1455 +1,1085 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Vòng Quay Nhân Phẩm - Fortune's Wheel</title>
-  <script src="https://cdn.tailwindcss.com">
-  </script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800;900&display=swap');
-    * { font-family: 'Be Vietnam Pro', sans-serif; box-sizing: border-box; }
-    body { background: #0a0a1a; overflow-x: hidden; }
-    .neon-glow { box-shadow: 0 0 15px rgba(250,204,21,0.3), 0 0 45px rgba(250,204,21,0.1); }
-    .neon-text { text-shadow: 0 0 10px rgba(250,204,21,0.5); }
-    .cell { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); cursor: pointer; position: relative; user-select: none; }
-    .cell:hover { transform: scale(1.08); z-index: 20; }
-    .cell-pop { animation: popIn 0.4s cubic-bezier(0.34,1.56,0.64,1) forwards; }
-    @keyframes popIn { 0% { transform: scale(0); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-    .cell-shuffle { animation: shuffleMove 0.5s ease-in-out forwards; }
-    @keyframes shuffleMove { 0% { transform: scale(1) rotate(0); opacity: 1; } 50% { transform: scale(0.8) rotate(15deg); opacity: 0.7; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
-    .cell-eval { animation: evalPulse 0.6s ease forwards; }
-    @keyframes evalPulse { 0% { box-shadow: 0 0 0 rgba(250,204,21,0); } 50% { box-shadow: 0 0 25px rgba(250,204,21,0.6); transform: scale(1.1); } 100% { box-shadow: 0 0 5px rgba(250,204,21,0.2); transform: scale(1); } }
-    .cell-score { animation: scorePop 0.4s ease forwards; }
-    @keyframes scorePop { 0% { transform: scale(0.5); opacity: 0; } 50% { transform: scale(1.3); } 100% { transform: scale(1); opacity: 1; } }
-    .slide-up { animation: slideUp 0.3s ease forwards; }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    .fade-in { animation: fadeIn 0.3s ease forwards; }
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    .score-float { position: absolute; pointer-events: none; font-weight: 900; z-index: 100; animation: floatUp 1s ease forwards; }
-    @keyframes floatUp { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 20% { transform: translateY(-10px) scale(1.2); opacity: 1; } 100% { transform: translateY(-60px) scale(1); opacity: 0; } }
-    .score-fly { position: fixed; pointer-events: none; font-weight: 900; z-index: 200; transition: all 0.8s cubic-bezier(0.34,1.56,0.64,1); }
-    .locked-cell { background: repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,0,0,0.12) 5px, rgba(255,0,0,0.12) 10px) !important; }
-    .rarity-common { border-color: #9ca3af; }
-    .rarity-tb { border-color: #22c55e; }
-    .rarity-hiem { border-color: #3b82f6; }
-    .rarity-cuc-hiem { border-color: #a855f7; box-shadow: 0 0 15px rgba(168,85,247,0.3); }
-    .overlay-bg { backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-    .btn-spin { background: linear-gradient(135deg, #f59e0b, #ef4444); transition: all 0.3s; }
-    .btn-spin:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(245,158,11,0.4); }
-    .btn-spin:disabled { opacity: 0.4; cursor: not-allowed; }
-    .log-entry { border-left: 3px solid transparent; padding-left: 8px; margin-bottom: 4px; font-size: 11px; line-height: 1.3; }
-    .log-cats { border-left-color: #f59e0b; color: #fbbf24; }
-    .log-sages { border-left-color: #dc2626; color: #fca5a5; }
-    .log-plants { border-left-color: #059669; color: #6ee7b7; }
-    .log-treasure { border-left-color: #eab308; color: #fde68a; }
-    .log-luck { border-left-color: #06b6d4; color: #67e8f9; }
-    .log-overload { border-left-color: #ea580c; color: #fdba74; }
-    .log-trash { border-left-color: #6b7280; color: #9ca3af; }
-    .log-combo { border-left-color: #a855f7; color: #d8b4fe; }
-    .card-3d { transition: all 0.3s ease; }
-    .card-3d:hover { transform: translateY(-8px) scale(1.02); box-shadow: 0 20px 60px rgba(0,0,0,0.5); }
-    .scrollbar-thin::-webkit-scrollbar { width: 4px; }
-    .scrollbar-thin::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
-    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(250,204,21,0.3); border-radius: 4px; }
-    .cell-replace-mode { cursor: pointer; border-color: #ef4444 !important; box-shadow: 0 0 15px rgba(239,68,68,0.5) !important; transform: scale(1.05); z-index: 25; }
-    .cell-replace-mode:hover { border-color: #fbbf24 !important; box-shadow: 0 0 25px rgba(250,204,21,0.7) !important; transform: scale(1.12); z-index: 30; }
-    .placement-replace { background: rgba(0,0,0,0.3) !important; backdrop-filter: blur(2px) !important; }
-    .placement-replace .bg-gray-900 { opacity: 0.15; transform: scale(0.95); transition: all 0.3s; }
-    .hl-source { box-shadow: 0 0 25px rgba(59,130,246,0.9), 0 0 50px rgba(59,130,246,0.4); z-index: 30; }
-    .hl-target { box-shadow: 0 0 25px rgba(239,68,68,0.9), 0 0 50px rgba(239,68,68,0.4); z-index: 30; }
-    .hl-self { box-shadow: 0 0 25px rgba(250,204,21,0.9), 0 0 50px rgba(250,204,21,0.4); z-index: 30; }
-    .dash-to-target { transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s; z-index: 35; }
-    .cell-fadeout { animation: fadeOut 0.3s ease forwards; }
-    @keyframes fadeOut { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(0.3); } }
-    /* Tooltip */
-    .tooltip-box { position: fixed; z-index: 300; pointer-events: none; transition: opacity 0.15s; max-width: 260px; }
-    /* Flying score dot */
-    .fly-dot { position: fixed; border-radius: 50%; pointer-events: none; z-index: 150; transition: all 0.6s cubic-bezier(0.34,1.56,0.64,1); }
-    .grid-cell-score { font-variant-numeric: tabular-nums; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cat Chaos — Final</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:#1a1a2e;min-height:100vh;display:flex;
+  justify-content:center;align-items:center;
+  font-family:'Segoe UI',system-ui,sans-serif;
+}
+.game-container{
+  background:#16213e;padding:16px 24px;border-radius:16px;
+  box-shadow:0 8px 32px rgba(0,0,0,0.5);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+}
+
+/* ── HUD ── */
+.hud{
+  display:flex;justify-content:space-between;align-items:center;
+  width:100%;color:#eee;font-size:13px;gap:12px;flex-wrap:wrap;
+}
+.hud .name{color:#e94560;font-weight:700;font-size:14px;white-space:nowrap}
+.hud .stat{white-space:nowrap}
+
+/* ── Canvas ── */
+canvas{
+  border:3px solid #0f3460;border-radius:8px;
+  background:#d3d3d3;display:block;cursor:pointer;
+}
+
+/* ── Item Selector ── */
+.item-selector{display:flex;flex-direction:column;gap:4px;width:100%}
+.item-row{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
+.btn-item{
+  padding:4px 10px;border:2px solid transparent;border-radius:6px;
+  background:#0f3460;color:#aaa;font-size:13px;
+  cursor:pointer;transition:all .12s;white-space:nowrap;
+}
+.btn-item:hover{background:#1a4a7a;color:#fff}
+.btn-item.active{border-color:#e94560;background:#1a4a7a;color:#fff}
+
+/* ── Energy ── */
+.energy-bar{display:flex;align-items:center;gap:8px;width:100%;color:#ccc;font-size:13px}
+.energy-label{font-weight:600;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
+.energy-text{color:#f5c842;font-weight:700;min-width:50px;text-align:center}
+.energy-track{flex:1;height:10px;background:#0f3460;border-radius:5px;overflow:hidden}
+.energy-fill{height:100%;background:linear-gradient(90deg,#e94560,#f5c842);border-radius:5px;transition:width .25s}
+.flash-warning{animation:flashRed .6s}
+@keyframes flashRed{0%,100%{color:#f5c842}50%{color:red;text-shadow:0 0 10px red}}
+
+/* ── Info ── */
+.info-bar{display:flex;justify-content:space-between;width:100%;color:#eee;font-size:13px}
+.info-bar .mode{color:#e94560;font-weight:700}
+.info-bar .status{color:#f5c842;font-size:12px}
+
+/* ── Controls ── */
+.controls{display:flex;gap:12px}
+.controls button{
+  padding:10px 32px;border:none;border-radius:8px;font-size:16px;
+  font-weight:700;cursor:pointer;transition:transform .12s,opacity .12s;letter-spacing:1px;
+}
+.controls button:active{transform:scale(.95)}
+.controls button:disabled{opacity:.4;cursor:not-allowed}
+.btn-go{background:#e94560;color:#fff}
+.btn-go:hover:not(:disabled){background:#ff6b81}
+.btn-reset{background:#533483;color:#fff}
+.btn-reset:hover:not(:disabled){background:#7548b8}
+.message{color:#f5c842;font-size:16px;font-weight:700;min-height:24px;text-align:center}
+
+/* ── Win Overlay ── */
+.overlay{
+  display:none;position:fixed;inset:0;z-index:100;
+  background:rgba(0,0,0,.75);justify-content:center;align-items:center;
+}
+.overlay.show{display:flex}
+.popup{
+  background:#16213e;padding:40px 48px;border-radius:20px;
+  text-align:center;box-shadow:0 0 60px rgba(233,69,96,.4);
+  border:2px solid #e94560;
+}
+.popup h2{color:#f5c842;font-size:28px;margin-bottom:12px}
+.popup .stars{font-size:52px;margin:12px 0;letter-spacing:8px}
+.popup .detail{color:#aaa;font-size:16px;margin-bottom:20px}
+.popup button{
+  padding:14px 44px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#e94560,#f5c842);
+  color:#fff;font-size:18px;font-weight:700;
+  cursor:pointer;transition:transform .12s;
+}
+.popup button:hover{transform:scale(1.05)}
+.popup button:active{transform:scale(.95)}
+</style>
 </head>
-<body class="text-white min-h-screen">
-  <div id="app" class="container mx-auto p-4 max-w-7xl">
-    <header class="text-center mb-4 pb-3 border-b border-yellow-600/30">
-      <h1 class="text-3xl font-black tracking-wider neon-text" style="background:linear-gradient(135deg,#f59e0b,#ef4444,#f59e0b);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-        VÒNG QUAY NHÂN PHẨM
-      </h1>
-      <p class="text-xs text-yellow-500/60 tracking-widest uppercase">Fortune's Wheel — Roguelike Deck-Builder</p>
-    </header>
+<body>
 
-    <div class="flex flex-col lg:flex-row gap-4">
-      <!-- LEFT PANEL -->
-      <div class="lg:w-[280px] shrink-0 space-y-3">
-        <div class="bg-gray-900/80 border border-yellow-700/30 rounded-xl p-4 neon-glow">
-          <div class="grid grid-cols-2 gap-2 text-sm">
-            <div><span class="text-gray-400 text-xs">🏆 SCORE</span><br><span id="scoreDisplay" class="text-2xl font-bold text-yellow-400">0</span></div>
-            <div><span class="text-gray-400 text-xs">🎯 QUOTA</span><br><span id="quotaDisplay" class="text-lg font-bold text-red-400">100</span></div>
-            <div><span class="text-gray-400 text-xs">📊 STAGE</span><br><span id="stageDisplay" class="text-lg font-bold text-cyan-400">1</span></div>
-            <div><span class="text-gray-400 text-xs">🔄 TURN</span><br><span id="turnDisplay" class="text-lg font-bold text-purple-400">0/8</span></div>
-          </div>
-          <div class="mt-3 pt-3 border-t border-gray-700/50 text-xs text-gray-400 flex justify-between">
-            <span>📦 Deck: <span id="deckCount">0</span></span>
-            <span>🗑️ Trash: <span id="trashCount">0</span></span>
-            <span>📍 Grid: <span id="gridCount">0</span>/25</span>
-          </div>
-        </div>
+<div class="game-container">
+  <!-- HUD -->
+  <div class="hud">
+    <span class="name" id="hudName">Level 1: Orange Intro</span>
+    <span class="stat" id="hudTimer">⏱ 45s</span>
+    <span class="stat" id="hudEnergy">⚡ 5 / 5</span>
+    <span class="stat" id="hudRetry">🔄 0</span>
+  </div>
 
-        <button id="spinBtn" class="btn-spin w-full py-4 rounded-xl text-lg font-bold tracking-wider text-white shadow-lg relative overflow-hidden">
-          <span id="spinBtnText">🎰 SPIN (Rút 1 Thẻ)</span>
-        </button>
+  <canvas id="gameCanvas"></canvas>
 
-        <div class="flex gap-2">
-          <button id="inventoryBtn" class="flex-1 py-2 bg-gray-800/80 border border-gray-700/50 rounded-xl text-sm text-gray-300 hover:bg-gray-700/80 transition">
-            📜 Kho Đồ
-          </button>
-          <button id="itemDexBtn" class="flex-1 py-2 bg-gray-800/80 border border-gray-700/50 rounded-xl text-sm text-cyan-300 hover:bg-gray-700/80 transition">
-            📖 ItemDex
-          </button>
-        </div>
-
-        <div class="bg-gray-900/60 border border-gray-700/30 rounded-xl p-3">
-          <div class="text-xs text-gray-400 mb-1">Tiến Độ Quota</div>
-          <div class="w-full h-3 bg-gray-800 rounded-full overflow-hidden">
-            <div id="quotaBar" class="h-full bg-gradient-to-r from-yellow-500 to-red-500 rounded-full transition-all duration-500" style="width:0%"></div>
-          </div>
-          <div id="quotaBarText" class="text-xs text-gray-500 mt-1 text-right">0%</div>
-        </div>
-
-        <div class="bg-gray-900/60 border border-gray-700/30 rounded-xl p-3 flex-1">
-          <div class="text-xs text-gray-400 mb-2 flex justify-between">
-            <span>⚡ COMBO LOG</span>
-            <button id="clearLogBtn" class="text-gray-600 hover:text-gray-400 text-xs">Clear</button>
-          </div>
-          <div id="comboLog" class="h-[200px] overflow-y-auto scrollbar-thin space-y-0.5 text-xs">
-            <div class="text-gray-600 italic">Nhấn SPIN để bắt đầu...</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RIGHT PANEL: Grid -->
-      <div class="flex-1">
-        <div class="bg-gray-900/80 border border-yellow-700/30 rounded-xl p-4 neon-grow">
-          <div id="stageName" class="text-center text-xs text-yellow-600 mb-3 uppercase tracking-widest">Vòng Quay Nhân Phẩm</div>
-          <div id="grid" class="grid grid-cols-5 gap-1.5 aspect-square max-w-[500px] mx-auto relative"></div>
-        </div>
-      </div>
+  <!-- Item Selector -->
+  <div class="item-selector">
+    <div class="item-row">
+      <button class="btn-item" data-item="fish">🐟 (2)</button>
+      <button class="btn-item" data-item="laser">🔴 (3)</button>
+      <button class="btn-item" data-item="box">📦 (2)</button>
+      <button class="btn-item" data-item="cucumber">🥒 (1)</button>
+      <button class="btn-item" data-item="vacuum">🤖 (4)</button>
+    </div>
+    <div class="item-row">
+      <button class="btn-item" data-item="yarn">🧶 (2)</button>
+      <button class="btn-item" data-item="bell">🔔 (1)</button>
+      <button class="btn-item" data-item="mirror">🪞 (2)</button>
+      <button class="btn-item" data-item="furniture">🪑 (2)</button>
+      <button class="btn-item" data-item="catDoor">🚪 (1)</button>
     </div>
   </div>
 
-  <!-- TOOLTIP -->
-  <div id="tooltip" class="tooltip-box hidden">
-    <div class="bg-gray-900/95 border border-yellow-600/40 rounded-xl p-3 shadow-2xl text-xs">
-      <div id="tooltipHeader" class="font-bold text-sm mb-1"></div>
-      <div id="tooltipRarity" class="text-gray-400 text-[10px] uppercase mb-1"></div>
-      <div id="tooltipBase" class="text-gray-300 mb-1"></div>
-      <div id="tooltipDesc" class="text-gray-500 leading-relaxed"></div>
-    </div>
+  <!-- Energy -->
+  <div class="energy-bar">
+    <span class="energy-label">Energy:</span>
+    <span class="energy-text" id="energyDisplay">5 / 5</span>
+    <div class="energy-track"><div class="energy-fill" id="energyFill" style="width:100%"></div></div>
   </div>
 
-  <!-- OVERLAY: Draft -->
-  <div id="draftOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/70 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-yellow-500/50 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-yellow-400 neon-text">🎁 Chọn Phần Thưởng</h2>
-        <p class="text-gray-400 text-sm">Chọn 1 thẻ để thêm vào kho đồ của bạn</p>
-      </div>
-      <div id="draftCards" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
-    </div>
+  <!-- Info -->
+  <div class="info-bar">
+    <span class="mode" id="modeDisplay">EDIT MODE</span>
+    <span class="status" id="statusDisplay">Orange: Idle</span>
   </div>
 
-  <!-- OVERLAY: Placement (Place/Skip/Sell) -->
-  <div id="placementOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/80 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-yellow-500/50 rounded-2xl p-6 max-w-md w-full text-center">
-      <div id="placementItemDisplay" class="mb-4">
-        <div id="placementEmoji" class="text-6xl mb-2"></div>
-        <div id="placementName" class="text-xl font-bold text-white"></div>
-        <div id="placementBase" class="text-sm text-green-400"></div>
-        <div id="placementDesc" class="text-xs text-gray-500 mt-2 leading-relaxed"></div>
-      </div>
-      <div id="placementButtons" class="flex flex-col gap-2">
-        <button id="placeBtn" class="w-full py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-sm font-bold transition">📍 Đặt lên Board</button>
-        <div class="flex gap-2">
-          <button id="skipBtn" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl text-sm font-bold transition">⏭ Bỏ qua</button>
-          <button id="sellBtn" class="flex-1 py-3 bg-amber-700 hover:bg-amber-600 rounded-xl text-sm font-bold transition">💰 Bán</button>
-        </div>
-      </div>
-      <div id="replaceModeText" class="hidden text-sm text-red-400 mt-3">
-        👆 Chọn 1 ô trên lưới để thay thế (item cũ sẽ biến mất)
-      </div>
-    </div>
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn-go" id="btnGo">GO</button>
+    <button class="btn-reset" id="btnReset">RESET</button>
   </div>
 
-  <!-- OVERLAY: Inventory -->
-  <div id="inventoryOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/70 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-cyan-500/50 rounded-2xl p-6 max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-cyan-400">📜 Kho Đồ (Inventory)</h2>
-        <button id="closeInventoryBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-      </div>
-      <div id="inventoryList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
-      <div class="mt-4 text-center">
-        <button id="closeInventoryBtn2" class="px-6 py-2 bg-gray-700 rounded-lg text-gray-300 hover:bg-gray-600 transition">Đóng</button>
-      </div>
-    </div>
+  <div class="message" id="messageDisplay"></div>
+</div>
+
+<!-- Win Overlay -->
+<div class="overlay" id="winOverlay">
+  <div class="popup">
+    <h2>🎉 Level Complete! 🎉</h2>
+    <div class="stars" id="winStars">⭐⭐⭐</div>
+    <p class="detail" id="winDetail">Retries: 0</p>
+    <button id="btnNext">▶ Next Level</button>
   </div>
+</div>
 
-  <!-- OVERLAY: ItemDex -->
-  <div id="itemDexOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/70 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-cyan-500/50 rounded-2xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="flex justify-between items-center mb-4">
-        <h2 class="text-2xl font-bold text-cyan-400">📖 ItemDex — Tất cả Item</h2>
-        <button id="closeDexBtn" class="text-gray-400 hover:text-white text-2xl">&times;</button>
-      </div>
-      <div id="itemDexTabs" class="flex flex-wrap gap-2 mb-4"></div>
-      <div id="itemDexList" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2"></div>
-      <div class="mt-4 text-center">
-        <button id="closeDexBtn2" class="px-6 py-2 bg-gray-700 rounded-lg text-gray-300 hover:bg-gray-600 transition">Đóng</button>
-      </div>
-    </div>
-  </div>
+<script>
+// ============================================================
+//  CONSTANTS
+// ============================================================
+const CELL = 50;
+const VISION_RADIUS = 3;
+const TICK_MS = 80;
+const TICKS_PER_SEC = Math.round(1000 / TICK_MS);
 
-  <!-- OVERLAY: Game Over -->
-  <div id="gameOverOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/80 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-red-500/50 rounded-2xl p-8 max-w-lg w-full text-center">
-      <div class="text-6xl mb-4">💀</div>
-      <h2 class="text-3xl font-bold text-red-400 mb-2">Game Over</h2>
-      <p class="text-gray-400 mb-6">Bạn đã không đạt được quota!</p>
-      <div id="gameOverStats" class="text-left space-y-2 mb-6 text-sm">
-        <div class="flex justify-between"><span class="text-gray-400">🏆 Score:</span><span id="goScore" class="font-bold text-yellow-400">0</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">📊 Stage:</span><span id="goStage" class="font-bold text-cyan-400">1</span></div>
-        <div class="flex justify-between"><span class="text-gray-400">📦 Deck Size:</span><span id="goDeck" class="font-bold text-purple-400">0</span></div>
-      </div>
-      <button id="restartBtn" class="btn-spin px-8 py-3 rounded-xl text-lg font-bold">🔄 Chơi Lại</button>
-    </div>
-  </div>
+const TILE = { NORMAL:0, WALL:1, GOAL:2, HOLE:3 };
 
-  <!-- OVERLAY: Victory -->
-  <div id="victoryOverlay" class="fixed inset-0 z-50 overlay-bg bg-black/80 hidden flex items-center justify-center p-4">
-    <div class="bg-gray-900 border-2 border-yellow-500/50 rounded-2xl p-8 max-w-lg w-full text-center">
-      <div class="text-6xl mb-4">👑</div>
-      <h2 class="text-3xl font-bold text-yellow-400 mb-2">Vượt Quota!</h2>
-      <p class="text-gray-400 mb-6">Tiến vào vòng tiếp theo!</p>
-      <div class="text-sm text-gray-400 mb-2">Score: <span id="vicScore" class="text-yellow-400 font-bold">0</span> | Stage: <span id="vicStage" class="text-cyan-400 font-bold">1</span></div>
-      <div id="vicRewards" class="text-xs text-gray-500 mb-4">🎁 Rewards: —</div>
-      <button id="continueBtn" class="btn-spin px-8 py-3 rounded-xl text-lg font-bold">▶ Tiếp Tục</button>
-    </div>
-  </div>
+const DIR = {
+  UP:'UP', DOWN:'DOWN', LEFT:'LEFT', RIGHT:'RIGHT',
+};
 
-  <!-- TOAST -->
-  <div id="toast" class="fixed bottom-4 right-4 z-50 bg-gray-900/95 border border-yellow-600/40 rounded-xl px-4 py-3 text-sm shadow-2xl hidden transition-all duration-300"></div>
+const GAME_MODE = { EDIT:'EDIT', SIMULATION:'SIMULATION' };
+const CAT_STATE = {
+  IDLE:'Idle', WALK:'Walk', STOP:'Stop', DIE:'Die',
+  EAT:'Eat', HIDE:'Hide', YARN_STUN:'YarnStun',
+  SCARED:'Scared', PLAY:'Play', MIRROR_PAUSE:'MirrorPause',
+};
 
-  <script>
-    // ============================================================
-    // ITEM DATABASE
-    // ============================================================
-    const ItemDB = {};
-    function def(id, data) { ItemDB[id] = { id, ...data }; }
+const DX = {[DIR.UP]:0,[DIR.DOWN]:0,[DIR.LEFT]:-1,[DIR.RIGHT]:1};
+const DY = {[DIR.UP]:-1,[DIR.DOWN]:1,[DIR.LEFT]:0,[DIR.RIGHT]:0};
 
-    const C = { cats: '#f59e0b', sages: '#dc2626', plants: '#059669', consumable: '#7c3aed',
-      treasure: '#eab308', luck: '#06b6d4', overload: '#ea580c', trash: '#6b7280' };
-    const F = { CATS: 'cats', SAGES: 'sages', PLANTS: 'plants', CONSUMABLE: 'consumable',
-      TREASURE: 'treasure', LUCK: 'luck', OVERLOAD: 'overload', TRASH: 'trash' };
-    function r(s) { return ['thường','thường','thường','trung_bình','trung_bình','hiếm','cực_hiếm'][s]||'thường'; }
+const TILE_COLORS = {
+  [TILE.NORMAL]:'#d3d3d3',[TILE.WALL]:'#696969',
+  [TILE.GOAL]:'#ffd700',[TILE.HOLE]:'#2c1810',
+};
 
-    // ======================== CATS ========================
-    def('meo_thuong', { name:'Mèo Thường (Miêu Nhi)', faction:F.CATS, rarity:r(0), base:1, emoji:'🐱',
-      desc:'Nếu cạnh Cá Khô/Chuột Gỗ: tiêu thụ, +2 điểm, hồi sau x2.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='ca_kho'||it.id==='chuot_go')){ g.pendingCatBonus=true; const pts=2; ctx.addScore(pts); ctx.log('🐱 Mèo Thường ăn '+it.name+'! +'+pts, 'cats'); ctx.consume(it.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); return; } } } });
+const CAT_COLORS = {
+  Orange:{body:'#ff8c00',stroke:'#cc6a00',size:.35},
+  Black:{body:'#333',stroke:'#222',size:.35},
+  Fat:{body:'#d4874a',stroke:'#a86838',size:.42},
+  Kitten:{body:'#aaa',stroke:'#888',size:.28},
+  Ninja:{body:'#2d2d2d',stroke:'#1a1a1a',size:.35},
+};
 
-    def('meo_ai_cap', { name:'Mèo Ai Cập (Miêu Thần)', faction:F.CATS, rarity:r(5), base:3, emoji:'🐈‍⬛',
-      desc:'5% (20% nếu Bùa) tự sinh Tượng Đất mỗi vòng.',
-      onEval(ctx){ const chance=ctx.g.hasAmulet?20:5; if(Math.random()*100<chance){ ctx.g.placeOnBoard('tuong_dat'); ctx.log('🐈‍⬛ Mèo Ai Cập tạo Tượng Đất!', 'cats'); } } });
+const InteractionMatrix = {
+  Orange:{fish:80,laser:100,box:50,cucumber:-100,vacuum:-100,yarn:60,bell:30,mirror:40,furniture:false,catDoor:false},
+  Black:{fish:70,laser:20,box:100,cucumber:-50,vacuum:-30,yarn:40,bell:20,mirror:20,furniture:false,catDoor:false},
+  Fat:{fish:120,laser:10,box:0,cucumber:-80,vacuum:-120,yarn:10,bell:10,mirror:0,furniture:false,catDoor:false},
+  Kitten:{fish:0,laser:80,box:0,cucumber:-120,vacuum:-150,yarn:90,bell:50,mirror:50,furniture:false,catDoor:true},
+  Ninja:{fish:50,laser:50,box:50,cucumber:0,vacuum:0,yarn:30,bell:0,mirror:0,furniture:true,catDoor:false},
+};
 
-    def('meo_to', { name:'Mèo To (Vua Mèo)', faction:F.CATS, rarity:r(6), base:0, emoji:'🐅',
-      desc:'Cộng tổng điểm các Mèo khác. Nếu cạnh Mèo Thường: nuốt, +5 vĩnh viễn.',
-      onEval(ctx){ let sum=0; const g=ctx.g; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.CATS&&it.id!=='meo_to') sum+=it.score||it.base; } if(sum>0){ ctx.addScore(sum); ctx.log('🐅 Vua Mèo hấp thụ '+sum+' điểm từ các Mèo khác', 'cats'); }
-        for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='meo_thuong'){ g.permCatBonus+=5; ctx.consume('meo_thuong'); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 5, 'consume'); ctx.log('🐅 Vua Mèo nuốt Mèo Thường! +5 vĩnh viễn', 'cats'); break; } } } });
+const ENERGY_COST = {
+  fish:2,laser:3,box:2,cucumber:1,vacuum:4,
+  yarn:2,bell:1,mirror:2,furniture:2,catDoor:1,
+};
 
-    def('meo_tam_the', { name:'Mèo Tam Thể (May Mắn)', faction:F.CATS, rarity:r(3), base:2, emoji:'🐾',
-      desc:'+1 cho mỗi item Hệ May Rủi trên lưới, sau đó tự hủy.',
-      onEval(ctx){ let n=0; const g=ctx.g; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK) n++; } if(n>0){ ctx.addScore(n); ctx.log('🐾 Mèo Tam Thể: +'+n+' từ May Rủi', 'cats'); } ctx.consume(ctx.item.id); ctx.log('🐾 Mèo Tam Thể tự hủy!', 'cats'); } });
+const ITEM_EMOJI = {
+  fish:'🐟',laser:'🔴',box:'📦',cucumber:'🥒',vacuum:'🤖',
+  yarn:'🧶',bell:'🔔',mirror:'🪞',furniture:'🪑',catDoor:'🚪',
+};
 
-    def('qua_trung', { name:'Quả Trứng', faction:F.CATS, rarity:r(0), base:0, emoji:'🥚',
-      desc:'5% (20% Bùa) nở thành Chim Sẻ/Gà Con, để lại Vỏ Trứng.',
-      onEval(ctx){ const chance=ctx.g.hasAmulet?20:5; if(Math.random()*100<chance){ const baby=Math.random()<0.5?'chim_se':'ga_con'; ctx.g.placeOnBoard(baby); ctx.g.placeOnBoard('vo_trung_vo'); ctx.consume('qua_trung'); ctx.addAnim(ctx.r, ctx.c, ctx.r, ctx.c, 0, 'self'); ctx.log('🥚 Trứng nở thành '+ItemDB[baby].name+'!', 'cats'); } } });
+const STUN_DURATIONS = {
+  EAT:12,HIDE:24,YARN_STUN:36,SCARED:12,MIRROR_PAUSE:12,
+};
 
-    def('chim_se', { name:'Chim Sẻ', faction:F.CATS, rarity:r(0), base:2, emoji:'🐦',
-      desc:'Nếu cạnh Mèo: bị bắt, +35 điểm.',
-      onEval(ctx){ for(const n of ctx.n8){ const it=ctx.g.grid[n.r][n.c]; if(it&&it.faction===F.CATS&&!['qua_trung','chim_se','ga_con','co_meo'].includes(it.id)){ ctx.addScore(35); ctx.consume('chim_se'); ctx.addAnim(n.r, n.c, ctx.r, ctx.c, 35, 'attack'); ctx.log('🐦 Chim Sẻ bị '+it.name+' bắt! +35', 'cats'); return; } } } });
+const STATE_RING_COLORS = {
+  [CAT_STATE.EAT]:{color:'#ff69b4',dashed:true},
+  [CAT_STATE.HIDE]:{color:'#4a90d9',dashed:false},
+  [CAT_STATE.YARN_STUN]:{color:'#f5c842',dashed:false},
+  [CAT_STATE.SCARED]:{color:'#9b59b6',dashed:true},
+  [CAT_STATE.PLAY]:{color:'red',dashed:false},
+  [CAT_STATE.MIRROR_PAUSE]:{color:'#00ced1',dashed:false},
+  [CAT_STATE.STOP]:{color:'#fff',dashed:false},
+  [CAT_STATE.DIE]:{color:'red',dashed:false},
+};
 
-    def('ga_con', { name:'Gà Con', faction:F.CATS, rarity:r(0), base:2, emoji:'🐤',
-      desc:'Nếu cạnh Mèo: bị bắt, +35 điểm.',
-      onEval(ctx){ for(const n of ctx.n8){ const it=ctx.g.grid[n.r][n.c]; if(it&&it.faction===F.CATS&&!['qua_trung','chim_se','ga_con','co_meo'].includes(it.id)){ ctx.addScore(35); ctx.consume('ga_con'); ctx.addAnim(n.r, n.c, ctx.r, ctx.c, 35, 'attack'); ctx.log('🐤 Gà Con bị '+it.name+' bắt! +35', 'cats'); return; } } } });
+// ============================================================
+//  LEVEL DATA  (3 levels)
+// ============================================================
+// Tiles: 0=Normal 1=Wall 2=Goal 3=Hole
+// Cat spawns are defined in cats[] config (not in grid)
+const Levels = [
+  // ── Level 1: Orange Intro (6x6) ──
+  {
+    id:1,name:'Orange Intro',rows:6,cols:6,maxEnergy:5,timer:45,
+    grid:[
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,2],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0],
+      [0,0,0,0,0,0],
+    ],
+    cats:[{type:'Orange',spawnX:0,spawnY:5,direction:DIR.RIGHT}],
+    // Fish in the cat's path (same row). Goal at top-right.
+    preplacedItems:[{type:'fish',x:2,y:5}],
+  },
 
-    def('co_meo', { name:'Cỏ Mèo (Catnip)', faction:F.CATS, rarity:r(0), base:1, emoji:'🌿',
-      desc:'x2 điểm Mèo cạnh hình chữ thập, sau đó tự hủy.',
-      adjEffect(ctx){ const dirs=[[-1,0],[1,0],[0,-1],[0,1]]; const g=ctx.g; for(const d of dirs){ const nr=ctx.r+d[0],nc=ctx.c+d[1]; if(nr>=0&&nr<5&&nc>=0&&nc<5){ const it=g.grid[nr][nc]; if(it&&it.faction===F.CATS){ const bonus=(it.score||it.base); it.score=bonus*2; ctx.addScore(bonus); ctx.addAnim(ctx.r, ctx.c, nr, nc, bonus, 'buff'); ctx.log('🌿 Cỏ Mèo x2 '+it.name+'! +'+bonus, 'cats'); } } } ctx.consume(ctx.item.id); ctx.log('🌿 Cỏ Mèo tự hủy!', 'cats'); } });
+  // ── Level 2: Mirror & Box (8x8) ──
+  {
+    id:2,name:'Mirror & Box',rows:8,cols:8,maxEnergy:7,timer:45,
+    grid:[
+      [0,0,0,0,0,0,0,2],
+      [1,1,0,0,0,0,0,0],
+      [0,0,0,1,1,0,0,0],
+      [0,0,0,1,0,0,0,0],
+      [0,0,0,0,0,1,0,0],
+      [0,0,0,0,1,0,0,0],
+      [0,0,0,0,0,0,1,1],
+      [2,0,0,0,0,0,0,0],
+    ],
+    cats:[
+      {type:'Orange',spawnX:0,spawnY:7,direction:DIR.RIGHT},
+      {type:'Black',spawnX:7,spawnY:0,direction:DIR.LEFT},
+    ],
+    preplacedItems:[
+      {type:'fish',x:3,y:0},
+      {type:'fish',x:4,y:6},
+      {type:'mirror',x:3,y:3},
+      {type:'box',x:4,y:4},
+    ],
+  },
 
-    // ======================== SAGES ========================
-    def('danh_tuong', { name:'Danh Tướng / Hiệp Khách', faction:F.SAGES, rarity:r(5), base:4, emoji:'⚔️',
-      desc:'Tiêu thụ Rượu(+25)/Binh Khí(+30)/Tiểu Binh(+20) vĩnh viễn. Bắt Đạo Tặc: +80.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(!it) continue;
-        if(it.id==='dao_tac'){ ctx.addScore(80); ctx.consume('dao_tac'); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 80, 'attack'); ctx.log('⚔️ Danh Tướng bắt Đạo Tặc! +80', 'sages'); return; }
-        if(it.id==='vo_ruou_ngon'){ g.permGeneralBonus+=25; ctx.consume('vo_ruou_ngon'); if(Math.random()<0.3){ g.placeOnBoard('can_ruou'); } ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 25, 'consume'); ctx.log('⚔️ Danh Tướng uống Rượu! +25 vĩnh viễn', 'sages'); }
-        else if(it.id==='binh_khi'){ g.permGeneralBonus+=30; ctx.consume('binh_khi'); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 30, 'consume'); ctx.log('⚔️ Danh Tướng nhặt Binh Khí! +30 vĩnh viễn', 'sages'); }
-        else if(it.id==='tieu_binh'){ g.permGeneralBonus+=20; ctx.consume('tieu_binh'); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 20, 'consume'); ctx.log('⚔️ Danh Tướng huấn luyện Tiểu Binh! +20 vĩnh viễn', 'sages'); }
-      } } });
+  // ── Level 3: Vacuum Panic (10x10) ──
+  {
+    id:3,name:'Vacuum Panic',rows:10,cols:10,maxEnergy:10,timer:45,
+    grid:[
+      [0,1,0,0,0,0,0,0,0,2],
+      [0,1,0,0,0,0,0,0,1,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,1,1,3,3,1,1,0,0],
+      [0,0,1,0,0,0,0,1,0,0],
+      [0,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,0,0,1,0,0,0],
+      [0,0,0,1,0,0,1,0,0,0],
+      [0,1,0,0,0,0,0,0,1,0],
+      [2,0,0,0,0,0,0,0,1,0],
+    ],
+    cats:[
+      {type:'Fat',spawnX:0,spawnY:9,direction:DIR.RIGHT},
+      {type:'Kitten',spawnX:9,spawnY:0,direction:DIR.LEFT},
+    ],
+    preplacedItems:[
+      {type:'fish',x:5,y:9},
+      {type:'fish',x:4,y:1},
+      {type:'catDoor',x:5,y:3},
+    ],
+  },
+];
 
-    def('van_nhan', { name:'Văn Nhân / Thi Sĩ', faction:F.SAGES, rarity:r(3), base:3, emoji:'📜',
-      desc:'Cạnh Cây Trúc/Măng Non/Bức Tranh: x3 bản thân, x2 vật phẩm đó, sau đó tự hủy.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='cay_truc'||it.id==='mang_non'||it.id==='buc_tranh')){ const selfBonus=(ctx.item.score||ctx.item.base)*2; ctx.addScore(selfBonus); const adjBonus=(it.score||it.base); it.score=adjBonus*2; ctx.addAnim(ctx.r, ctx.c, n.r, n.c, adjBonus, 'buff'); ctx.log('📜 Văn Nhân khơi nguồn cảm hứng! +'+(selfBonus+adjBonus), 'sages'); ctx.consume(ctx.item.id); ctx.log('📜 Văn Nhân tự hủy!', 'sages'); return; } } } });
+// ============================================================
+//  GAME STATE
+// ============================================================
+let grid=[], cats=[], goals=[], items=[];
+let gameMode=GAME_MODE.EDIT;
+let selectedItemType='fish';
+let currentEnergy=10, maxEnergy=10;
+let currentLevelIndex=0;
+let levelTimer=45, totalTicks=0;
+let retryCount=0;
 
-    def('thuong_nhan', { name:'Thương Nhân', faction:F.SAGES, rarity:r(3), base:2, emoji:'👨‍💼',
-      desc:'Tiêu thụ Tơ Lụa/Hộp Trà/Ngọc Thạch: 4x điểm gốc.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(!it) continue;
-        if(it.id==='to_lua'||it.id==='ngoc_thach'){ const pts=it.base*4; ctx.addScore(pts); ctx.consume(it.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); if(it.id!=='ngoc_thach'&&Math.random()<0.3){ g.placeOnBoard('ba_tra'); } ctx.log('👨‍💼 Thương Nhân giao dịch '+it.name+'! +'+pts, 'sages'); } } } });
+// DOM refs
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const modeDisplay=document.getElementById('modeDisplay');
+const statusDisplay=document.getElementById('statusDisplay');
+const messageDisplay=document.getElementById('messageDisplay');
+const energyDisplay=document.getElementById('energyDisplay');
+const energyFill=document.getElementById('energyFill');
+const btnGo=document.getElementById('btnGo');
+const btnReset=document.getElementById('btnReset');
+const btnNext=document.getElementById('btnNext');
+const winOverlay=document.getElementById('winOverlay');
+const winStars=document.getElementById('winStars');
+const winDetail=document.getElementById('winDetail');
+const hudName=document.getElementById('hudName');
+const hudTimer=document.getElementById('hudTimer');
+const hudEnergy=document.getElementById('hudEnergy');
+const hudRetry=document.getElementById('hudRetry');
+const itemButtons=document.querySelectorAll('.btn-item');
 
-    def('tho_mo', { name:'Thợ Mỏ', faction:F.SAGES, rarity:r(0), base:1, emoji:'⛏️',
-      desc:'Đập Quặng/Khối Đá → Thỏi Vàng. Đập Tượng Đất → Bảo Vật Thượng Cổ. Tự hủy.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(!it) continue;
-        if(it.id==='quang_tho'||it.id==='khoi_da'){ g.placeOnBoard('thoi_vang'); ctx.consume(it.id); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 0, 'attack'); ctx.log('⛏️ Thợ Mỏ đập '+it.name+' → Thỏi Vàng!', 'sages'); return; }
-        if(it.id==='tuong_dat'){ g.placeOnBoard('bao_vat_thuong_co'); ctx.consume(it.id); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 0, 'attack'); ctx.log('⛏️ Thợ Mỏ đập Tượng Đất → Bảo Vật Thượng Cổ!', 'sages'); return; }
-      } } });
+let simulationInterval=null;
 
-    def('dao_tac', { name:'Đạo Tặc / Thích Khách', faction:F.SAGES, rarity:r(0), base:2, emoji:'🗡️',
-      desc:'Hút Đồng Xu trên lưới (+5/xu). Bị Danh Tướng bắt nếu cạnh.',
-      onEval(ctx){ const g=ctx.g; let coins=0, pts=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.id==='dong_xu_dong'){ coins++; pts+=5; ctx.consume('dong_xu_dong'); ctx.addAnim(ctx.r, ctx.c, r, c, 5, 'consume'); } } if(coins>0){ ctx.addScore(pts); ctx.log('🗡️ Đạo Tặc ăn '+coins+' Đồng Xu! +'+pts, 'sages'); } } });
+// ============================================================
+//  HELPERS
+// ============================================================
+function getItemPriority(catType,itemType){
+  const val=InteractionMatrix[catType]?.[itemType];
+  if(typeof val==='boolean')return null;
+  return val??0;
+}
 
-    def('thay_boi', { name:'Thầy Bói / Phương Sĩ', faction:F.SAGES, rarity:r(5), base:2, emoji:'🔮',
-      desc:'x2 điểm tất cả item Hệ May Rủi trên lưới, sau đó tự hủy.',
-      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.LUCK){ const bonus=it.score||it.base; total+=bonus; it.score=(it.score||it.base)*2; ctx.addAnim(ctx.r, ctx.c, r, c, bonus, 'buff'); } } if(total>0) ctx.log('🔮 Thầy Bói x2 điểm Hệ May Rủi! +'+total, 'sages'); ctx.consume(ctx.item.id); ctx.log('🔮 Thầy Bói tự hủy!', 'sages'); } });
+function isBlockingItem(catType,item){
+  if(item.type==='furniture')return !InteractionMatrix[catType]?.furniture;
+  if(item.type==='catDoor')return !InteractionMatrix[catType]?.catDoor;
+  if(item.type==='box'&&item.hidingCat)return true;
+  return false;
+}
 
-    def('lao_an_may', { name:'Lão Ăn Mày / Khất Cái', faction:F.SAGES, rarity:r(5), base:1, emoji:'🧑‍🦯',
-      desc:'Ăn rác: +5 vĩnh viễn/rác. 10 rác → Kỳ Nhân Ẩn Thế (+150).',
-      onEval(ctx){ const g=ctx.g; let trash=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.TRASH){ trash++; ctx.consume(it.id); ctx.addAnim(ctx.r, ctx.c, r, c, 5, 'consume'); } } if(trash>0){ g.beggarCount+=trash; g.permBeggarBonus+=trash*5; if(g.beggarCount>=10&&!g.isBeggarEvolved){ g.isBeggarEvolved=true; ctx.log('🧑‍🦯 LÃO ĂN MÀY TIẾN HÓA → Kỳ Nhân Ẩn Thế! +150 vĩnh viễn', 'combo'); } ctx.log('🧑‍🦯 Lão Ăn Mày ăn '+trash+' rác! +'+(trash*5)+' vĩnh viễn', 'sages'); } } });
+function getOppositeDirection(dir){
+  const m={[DIR.UP]:DIR.DOWN,[DIR.DOWN]:DIR.UP,[DIR.LEFT]:DIR.RIGHT,[DIR.RIGHT]:DIR.LEFT};
+  return m[dir]||DIR.RIGHT;
+}
 
-    def('than_y', { name:'Thần Y / Độc Cô Gia', faction:F.SAGES, rarity:r(5), base:3, emoji:'💊',
-      desc:'Tiêu thụ Củi Khô/Lá Úa/Bã Trà: x3 ngẫu nhiên 3 ô vòng sau.',
-      adjEffect(ctx){ const g=ctx.g; let consumed=false; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='cui_kho_la_ua'||it.id==='ba_tra')){ ctx.consume(it.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, 0, 'consume'); consumed=true; } } if(consumed){ g.nextSpinMultiplierCells=3; ctx.log('💊 Thần Y pha chế! Vòng sau x3 ngẫu nhiên 3 ô', 'sages'); } } });
+function canMoveTo(x,y,catType){
+  if(x<0||x>=canvas.width/CELL||y<0||y>=canvas.height/CELL)return false;
+  if(grid[y][x]===TILE.WALL||grid[y][x]===TILE.HOLE)return false;
+  const item=items.find(it=>it.x===x&&it.y===y);
+  if(item&&isBlockingItem(catType,item))return false;
+  // Other cats block
+  if(cats.some(c=>c.x===x&&c.y===y))return false;
+  return true;
+}
 
-    // ======================== PLANTS ========================
-    def('buc_tranh', { name:'Bức Tranh (Họa Cuốn)', faction:F.PLANTS, rarity:r(3), base:2, emoji:'🖼️',
-      desc:'10% (25% Bùa) sinh Cây Trúc mỗi vòng.',
-      onEval(ctx){ const chance=ctx.g.hasAmulet?25:10; if(Math.random()*100<chance){ ctx.g.placeOnBoard('cay_truc'); ctx.log('🖼️ Bức Tranh sinh Cây Trúc!', 'plants'); } } });
+function isWalkable(x,y,catType){
+  if(x<0||x>=canvas.width/CELL||y<0||y>=canvas.height/CELL)return false;
+  if(grid[y][x]===TILE.WALL)return false;
+  const item=items.find(it=>it.x===x&&it.y===y);
+  if(item&&isBlockingItem(catType,item))return false;
+  if(cats.some(c=>c.x===x&&c.y===y))return false;
+  return true;
+}
 
-    def('cay_truc', { name:'Cây Trúc', faction:F.PLANTS, rarity:r(0), base:2, emoji:'🎋',
-      desc:'15% sinh Măng Non. 20% rụng Củi Khô/Lá Úa.',
-      onEval(ctx){ const g=ctx.g;
-        if(Math.random()*100<15){ g.placeOnBoard('mang_non'); ctx.log('🎋 Cây Trúc mọc Măng Non!', 'plants'); }
-        if(Math.random()*100<20){ g.placeOnBoard('cui_kho_la_ua'); ctx.log('🎋 Cây Trúc rụng Củi Khô/Lá Úa', 'plants'); } } });
+function initItemDefaults(item){
+  if(item.type==='laser')item.on=true;
+  if(item.type==='box')item.hidingCat=false;
+  if(item.type==='cucumber')item.hidden=true;
+  if(item.type==='vacuum'){
+    item.dir=DIR.RIGHT;item.patrolMax=2;
+    item.tickCounter=0;item.startX=item.x;
+  }
+  if(item.type==='yarn')item.durability=3;
+}
 
-    def('mang_non', { name:'Măng Non', faction:F.PLANTS, rarity:r(0), base:1, emoji:'🌱',
-      desc:'3 vòng không chạm → Cây Trúc.',
-      onEval(ctx){ const g=ctx.g; g.mangNonAge=(g.mangNonAge||0)+1; if(g.mangNonAge>=3){ g.placeOnBoard('cay_truc'); ctx.consume('mang_non'); g.mangNonAge=0; ctx.addAnim(ctx.r, ctx.c, ctx.r, ctx.c, 0, 'self'); ctx.log('🌱 Măng Non tiến hóa → Cây Trúc!', 'plants'); } } });
+// ============================================================
+//  LEVEL MANAGER
+// ============================================================
+function loadLevel(index){
+  const lv=Levels[index];
+  currentLevelIndex=index;
+  stopSimulation();
 
-    // ======================== CONSUMABLES ========================
-    def('vo_ruou_ngon', { name:'Vò Rượu Ngon', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🍶', desc:'Mồi cho Danh Tướng. 30% để lại Cặn Rượu.' });
-    def('binh_khi', { name:'Binh Khí (Kiếm/Thương)', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🗡️', desc:'Mồi cho Danh Tướng (+30).' });
-    def('tieu_binh', { name:'Tiểu Binh (Lính Rác)', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'⛩️', desc:'Mồi cho Danh Tướng (+20).' });
-    def('ca_kho', { name:'Cá Khô', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🐟', desc:'Mồi cho Mèo Thường.' });
-    def('chuot_go', { name:'Chuột Gỗ Đồ Chơi', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🪀', desc:'Kích hoạt Mèo Thường cạnh.' });
-    def('cuon_sach_co', { name:'Cuộn Sách Cổ / Binh Pháp', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'📖', desc:'Mồi cho Văn Nhân / Mưu Sĩ.' });
-    def('quang_tho', { name:'Quặng Thô / Khối Đá', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🪨', desc:'Nhiên liệu cho Thợ Mỏ.' });
-    def('to_lua', { name:'Tơ Lụa / Hộp Trà', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🧣', desc:'Nhiên liệu cho Thương Nhân. 30% để lại Bã Trà.' });
-    def('ngoc_thach', { name:'Ngọc Thạch', faction:F.CONSUMABLE, rarity:r(3), base:3, emoji:'💚', desc:'Đá quý cho Thương Nhân giao dịch 4x.' });
+  // Canvas size
+  canvas.width=lv.cols*CELL;
+  canvas.height=lv.rows*CELL;
 
-    // ======================== EQUIPMENT ========================
-    def('cung_ten', { name:'Cung Tên', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🏹',
-      desc:'Cạnh Danh Tướng: +35 điểm, tự hủy.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=35; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🏹 Cung Tên được Danh Tướng sử dụng! +'+pts, 'sages'); return; } } } });
-    def('giap_sat', { name:'Giáp Sắt', faction:F.CONSUMABLE, rarity:r(0), base:1, emoji:'🛡️',
-      desc:'Cạnh Danh Tướng: +25 điểm, tự hủy.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=25; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🛡️ Giáp Sắt được Danh Tướng trang bị! +'+pts, 'sages'); return; } } } });
-    def('chien_ma', { name:'Chiến Mã', faction:F.CONSUMABLE, rarity:r(3), base:2, emoji:'🐎',
-      desc:'Cạnh Danh Tướng: +40 điểm, tự hủy.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.id==='danh_tuong'){ const pts=40; ctx.addScore(pts); ctx.consume(ctx.item.id); ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🐎 Chiến Mã được Danh Tướng cưỡi! +'+pts, 'sages'); return; } } } });
+  // Grid
+  grid=[];
+  for(let r=0;r<lv.rows;r++){
+    grid[r]=[];
+    for(let c=0;c<lv.cols;c++)grid[r][c]=lv.grid[r]?.[c]??TILE.NORMAL;
+  }
 
-    // ======================== TREASURES ========================
-    def('tuong_dat', { name:'Tượng Đất', faction:F.TREASURE, rarity:r(0), base:0, emoji:'🗿', desc:'Bị Thợ Mỏ/Danh Tướng đập → Bảo Vật Thượng Cổ.' });
-    def('bao_vat_thuong_co', { name:'Bảo Vật Thượng Cổ', faction:F.TREASURE, rarity:r(5), base:50, emoji:'💎', desc:'+50 điểm mỗi vòng.' });
-    def('binh_gom_co', { name:'Bình Gốm Cổ', faction:F.TREASURE, rarity:r(3), base:4, emoji:'🏺',
-      desc:'Mèo cạnh 10% đập vỡ → +120, để lại Mảnh Gốm.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&it.faction===F.CATS){ if(Math.random()<0.1){ ctx.addScore(120); ctx.consume('binh_gom_co'); g.placeOnBoard('manh_gom_nat'); ctx.addAnim(n.r, n.c, ctx.r, ctx.c, 120, 'attack'); ctx.log('🏺 '+it.name+' đập vỡ Bình Gốm! +120', 'treasure'); return; } } } } });
-    def('ruong_bau', { name:'Rương Báu / Tráp Vàng', faction:F.TREASURE, rarity:r(5), base:0, emoji:'🧰',
-      desc:'3 vòng sau mở: +200 điểm, tự hủy.',
-      onEval(ctx){ const g=ctx.g; g.chestTurn=(g.chestTurn||0)+1; if(g.chestTurn>=3){ ctx.addScore(200); ctx.consume('ruong_bau'); g.chestTurn=0; ctx.addAnim(ctx.r, ctx.c, ctx.r, ctx.c, 200, 'self'); ctx.log('🧰 Rương Báu mở! +200 điểm!', 'treasure'); } } });
-    def('ngoc_ty', { name:'Ngọc Tỷ Truyền Quốc', faction:F.TREASURE, rarity:r(6), base:10, emoji:'👑',
-      desc:'x3 tổng điểm Hệ Danh Sĩ trên lưới, sau đó tự hủy.',
-      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.SAGES) total+=it.score||it.base; } if(total>0){ ctx.addScore(total*2); ctx.log('👑 Ngọc Tỷ x3 Danh Sĩ! +'+(total*2), 'treasure'); } ctx.consume(ctx.item.id); ctx.log('👑 Ngọc Tỷ tự hủy!', 'treasure'); } });
+  // Goals
+  goals=[];
+  for(let r=0;r<lv.rows;r++)
+    for(let c=0;c<lv.cols;c++)
+      if(grid[r][c]===TILE.GOAL)goals.push({x:c,y:r});
 
-    // ======================== LUCK ========================
-    def('dong_xu_dong', { name:'Đồng Xu Đồng', faction:F.LUCK, rarity:r(0), base:1, emoji:'🪙', desc:'Bị Đạo Tặc/Tỳ Hưu ăn mất.' });
-    def('thoi_vang', { name:'Thỏi Vàng', faction:F.LUCK, rarity:r(3), base:4, emoji:'🥇', desc:'Điểm cao, độc lập.' });
-    def('ty_hieu', { name:'Tỳ Hưu Nuốt Vàng', faction:F.LUCK, rarity:r(6), base:0, emoji:'🐉',
-      desc:'Ăn Đồng Xu/Thỏi Vàng cạnh: +2x điểm.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='dong_xu_dong'||it.id==='thoi_vang')){ const pts=it.base*2; ctx.addScore(pts); ctx.consume(it.id); g.tyHieuBonus+=it.base; ctx.addAnim(ctx.r, ctx.c, n.r, n.c, pts, 'consume'); ctx.log('🐉 Tỳ Hưu nuốt '+it.name+'! +'+pts, 'luck'); } } } });
-    def('tui_gam', { name:'Túi Gấm', faction:F.LUCK, rarity:r(0), base:1, emoji:'👛',
-      desc:'Điểm ngẫu nhiên +1 đến +15 mỗi vòng.',
-      onEval(ctx){ const pts=1+Math.floor(Math.random()*15); ctx.item.score=pts; ctx.addScore(pts); ctx.log('👛 Túi Gấm: +'+pts, 'luck'); } });
-    def('xuc_xac', { name:'Xúc Xắc May Mắn', faction:F.LUCK, rarity:r(0), base:1, emoji:'🎲',
-      desc:'+1 đến +6. x2 nếu cạnh Thầy Bói.',
-      onEval(ctx){ let pts=1+Math.floor(Math.random()*6); ctx.item.score=pts; for(const n of ctx.n8){ const it=ctx.g.grid[n.r][n.c]; if(it&&it.id==='thay_boi'){ pts*=2; ctx.item.score=pts; ctx.log('🎲 Xúc Xắc được Thầy Bội phù phép! x2 = '+pts, 'luck'); break; } } ctx.addScore(pts); } });
-    def('bua_ho_menh', { name:'Bùa Hộ Mệnh / Bùa May Mắn', faction:F.LUCK, rarity:r(3), base:0, emoji:'🪬',
-      desc:'+15% xác suất cho mọi hiệu ứng ngẫu nhiên.',
-      onEval(ctx){ ctx.g.hasAmulet=true; ctx.log('🪬 Bùa Hộ Mệnh kích hoạt! +15% may mắn', 'luck'); } });
+  // Cats
+  cats=lv.cats.map(c=>({
+    x:c.spawnX,y:c.spawnY,spawnX:c.spawnX,spawnY:c.spawnY,
+    direction:c.direction||DIR.RIGHT,speed:1,
+    state:CAT_STATE.IDLE,type:c.type,stateTimer:0,
+  }));
 
-    // ======================== OVERLOAD ========================
-    def('bao_tai_rach', { name:'Bao Tải Rách', faction:F.OVERLOAD, rarity:r(0), base:0, emoji:'👜',
-      desc:'Mỗi vòng sinh 2-3 Mảnh Vụn Vải.',
-      onEval(ctx){ const n=2+Math.floor(Math.random()*2); for(let i=0;i<n;i++) ctx.g.placeOnBoard('manh_vun_vai'); ctx.log('👜 Bao Tải Rách rò rỉ '+n+' Mảnh Vụn Vải!', 'overload'); } });
-    def('qua_bom', { name:'Quả Bom Hẹn Giờ', faction:F.OVERLOAD, rarity:r(3), base:0, emoji:'💣',
-      desc:'Đếm ngược 3 vòng. Khóa ô xung quanh. Nổ ở 0.',
-      onEval(ctx){ const g=ctx.g; g.bombTurn=(g.bombTurn||0)+1;
-        const dirs=[[-1,0],[1,0],[0,-1],[0,1]]; for(const d of dirs){ const nr=ctx.r+d[0],nc=ctx.c+d[1]; if(nr>=0&&nr<5&&nc>=0&&nc<5) g.lockedCells.add(nr+','+nc); }
-        if(g.bombTurn>=3){ ctx.log('💥 Bom nổ!', 'overload'); ctx.consume('qua_bom'); g.bombTurn=0; ctx.addAnim(ctx.r, ctx.c, ctx.r, ctx.c, 0, 'self'); for(const d of dirs){ const nr=ctx.r+d[0],nc=ctx.c+d[1]; if(nr>=0&&nr<5&&nc>=0&&nc<5) g.lockedCells.delete(nr+','+nc); } } } });
-    def('phao_thu', { name:'Pháo Thủ Hoàng Gia', faction:F.OVERLOAD, rarity:r(5), base:0, emoji:'🧨',
-      desc:'≥15 item: xóa rác + tiêu hao, +15/rác, +0.3x toàn cục.',
-      onEval(ctx){ const g=ctx.g; let total=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++) if(g.grid[r][c]) total++;
-        if(total>=15){ let cleared=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&(it.faction===F.TRASH||it.faction===F.CONSUMABLE)){ ctx.addScore(15); cleared++; ctx.consume(it.id); ctx.addAnim(ctx.r, ctx.c, r, c, 15, 'attack'); } } if(cleared>0){ g.globalMultiplier+=0.3*cleared; ctx.log('🧨 Pháo Thủ xóa '+cleared+' item! x'+g.globalMultiplier.toFixed(1)+' toàn cục', 'overload'); } } } });
-    def('binh_thuoc_no', { name:'Bình Thuốc Nổ Đậm Đặc', faction:F.OVERLOAD, rarity:r(0), base:1, emoji:'⚗️',
-      desc:'Bị Thợ Mỏ/Danh Tướng: nổ X, kích nổ dây chuyền.',
-      adjEffect(ctx){ const g=ctx.g; for(const n of ctx.n8){ const it=g.grid[n.r][n.c]; if(it&&(it.id==='tho_mo'||it.id==='danh_tuong')){
-        ctx.log('⚗️ Bình Thuốc Nổ bị kích hoạt! Nổ X!', 'overload'); ctx.consume('binh_thuoc_no');
-        ctx.addAnim(n.r, n.c, ctx.r, ctx.c, 0, 'attack');
-        const blast=[[-1,-1],[-1,1],[1,-1],[1,1]]; for(const b of blast){ const br=ctx.r+b[0],bc=ctx.c+b[1]; if(br>=0&&br<5&&bc>=0&&bc<5&&g.grid[br][bc]){ const hit=g.grid[br][bc]; ctx.forceConsume(hit.id); } } return; } } } });
-    def('tran_phap', { name:'Trận Pháp Thôn Phệ', faction:F.OVERLOAD, rarity:r(6), base:5, emoji:'🔯',
-      desc:'≥8 item bị phá hủy: x2/x3 combo.',
-      onEval(ctx){ if(ctx.destroyedCount>=8){ const mult=ctx.destroyedCount>=12?3:2; ctx.comboMultiplier*=mult; ctx.log('🔯 Trận Pháp Thôn Phệ! x'+mult+' combo!', 'overload'); } } });
+  // Items (pre-placed + flag)
+  items=lv.preplacedItems?JSON.parse(JSON.stringify(lv.preplacedItems)):[];
+  items.forEach(i=>{i.preplaced=true;initItemDefaults(i);});
 
-    // ======================== TRASH ========================
-    def('vo_trung_vo', { name:'Vỏ Trứng Vỡ', faction:F.TRASH, rarity:r(0), base:0, emoji:'🥚', desc:'Rác.' });
-    def('manh_gom_nat', { name:'Mảnh Gốm Nát', faction:F.TRASH, rarity:r(0), base:0, emoji:'🏺', desc:'Rác.' });
-    def('cui_kho_la_ua', { name:'Củi Khô / Lá Úa', faction:F.TRASH, rarity:r(0), base:0, emoji:'🍂', desc:'Rác.' });
-    def('can_ruou', { name:'Cặn Rượu / Bã Trà', faction:F.TRASH, rarity:r(0), base:0, emoji:'🧪', desc:'Rác.' });
-    def('ba_tra', { name:'Bã Trà', faction:F.TRASH, rarity:r(0), base:0, emoji:'🫖', desc:'Rác.' });
-    def('manh_vun_vai', { name:'Mảnh Vụn Vải', faction:F.TRASH, rarity:r(0), base:0, emoji:'🧵', desc:'Rác.' });
-    def('tui_hanh_khat', { name:'Túi Hành Khất Phong Thủy', faction:F.TRASH, rarity:r(3), base:2, emoji:'🎒',
-      desc:'+4/rác trên lưới. ≥5 rác: x2. Sau đó tự hủy.',
-      onEval(ctx){ const g=ctx.g; let trash=0; for(let r=0;r<5;r++)for(let c=0;c<5;c++){ const it=g.grid[r][c]; if(it&&it.faction===F.TRASH) trash++; } const pts=trash*4; ctx.addScore(pts); if(trash>=5){ ctx.addScore((ctx.item.score||ctx.item.base)); ctx.log('🎒 Túi Hành Khất: +'+pts+' (x2 vì ≥5 rác)', 'trash'); } else { ctx.log('🎒 Túi Hành Khất: +'+pts, 'trash'); } ctx.consume(ctx.item.id); ctx.log('🎒 Túi Hành Khất tự hủy!', 'trash'); } });
+  // Energy
+  maxEnergy=lv.maxEnergy;
+  currentEnergy=lv.maxEnergy;
 
-    // ============================================================
-    // GAME STATE
-    // ============================================================
-    const SPINS_PER_STAGE = 10;
+  // Timer & retry
+  levelTimer=lv.timer;
+  totalTicks=0;
+  retryCount=0;
 
-    class Game {
-      constructor(){ this.reset(); }
-      reset(){
-        this.stage=1;
-        this.turn=0;
-        this.score=0;
-        this.quota=50;
-        this.inventory=[];
-        this.grid=Array.from({length:5},()=>Array(5).fill(null));
-        this.lastTurnScore=0;
-        this.comboLog=[];
-        this.isGameOver=false;
-        this.isVictory=false;
-        this.hasAmulet=false;
-        this.beggarCount=0;
-        this.isBeggarEvolved=false;
-        this.globalMultiplier=1.0;
-        this.lockedCells=new Set();
-        this.permGeneralBonus=0;
-        this.permBeggarBonus=0;
-        this.permCatBonus=0;
-        this.tyHieuBonus=0;
-        this.pendingCatBonus=false;
-        this.nextSpinMultiplierCells=0;
-        this.chestTurn=0;
-        this.bombTurn=0;
-        this.mangNonAge=0;
-        this.comboMultiplier=1;
-        this.destroyedCount=0;
-        // For animation
-        this.turnBonus=0;
-        this.interactions=[];
-        this._consumedTargets=new Set();
-        const starter=[
-          'meo_thuong','meo_thuong','co_meo','ca_kho','chuot_go',
-          'danh_tuong','binh_khi','vo_ruou_ngon',
-          'van_nhan','cay_truc','buc_tranh','mang_non',
-          'dao_tac','dong_xu_dong','dong_xu_dong',
-          'thay_boi','xuc_xac','bua_ho_menh','tui_gam','qua_trung',
-          // === mở rộng thêm 14 item ===
-          'thuong_nhan','to_lua',
-          'tho_mo','quang_tho',
-          'lao_an_may','bao_tai_rach','tui_hanh_khat','than_y',
-          'meo_tam_the','thoi_vang','ngoc_thach',
-          'binh_gom_co','cui_kho_la_ua','meo_thuong',
-          'cung_ten','giap_sat','chien_ma'
-        ];
-        for(const id of starter) this.addToInventory(id);
+  gameMode=GAME_MODE.EDIT;
+  messageDisplay.textContent='';
+  winOverlay.classList.remove('show');
+  updateUI();
+  render();
+}
+
+function reloadLevel(){
+  loadLevel(currentLevelIndex);
+}
+
+// ============================================================
+//  RESET / RETRY
+// ============================================================
+function resetGame(){
+  retryCount++;
+  stopSimulation();
+  gameMode=GAME_MODE.EDIT;
+
+  const lv=Levels[currentLevelIndex];
+
+  // Reset cats to spawn
+  cats.forEach((c,i)=>{
+    const cfg=lv.cats[i];
+    c.x=cfg.spawnX;c.y=cfg.spawnY;
+    c.direction=cfg.direction||DIR.RIGHT;
+    c.state=CAT_STATE.IDLE;c.stateTimer=0;
+  });
+
+  // Keep pre-placed items, remove player items
+  items=items.filter(i=>i.preplaced);
+
+  currentEnergy=lv.maxEnergy;
+  levelTimer=lv.timer;
+  totalTicks=0;
+
+  messageDisplay.textContent='';
+  winOverlay.classList.remove('show');
+  updateUI();
+  render();
+}
+
+// ============================================================
+//  ENERGY
+// ============================================================
+function flashEnergyWarning(){
+  energyDisplay.classList.add('flash-warning');
+  messageDisplay.textContent='⚠️ Not enough Energy!';
+  setTimeout(()=>energyDisplay.classList.remove('flash-warning'),600);
+}
+
+// ============================================================
+//  VISION (per cat)
+// ============================================================
+function scanVision(c){
+  const visible=[];
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+
+  for(const dir of[DIR.UP,DIR.DOWN,DIR.LEFT,DIR.RIGHT]){
+    for(let dist=1;dist<=VISION_RADIUS;dist++){
+      const nx=c.x+DX[dir]*dist,ny=c.y+DY[dir]*dist;
+      if(nx<0||nx>=cols||ny<0||ny>=rows)break;
+      if(grid[ny][nx]===TILE.WALL)break;
+
+      const item=items.find(it=>it.x===nx&&it.y===ny);
+      if(!item)continue;
+      if(isBlockingItem(c.type,item))break;
+      if(item.type==='cucumber'&&item.hidden)continue;
+      if(item.type==='laser'&&!item.on)continue;
+      if(item.type==='bell'&&dist>2)continue;
+
+      const priority=getItemPriority(c.type,item.type);
+      if(priority!==null&&priority!==0)
+        visible.push({item,direction:dir,distance:dist,priority});
+    }
+  }
+  return visible;
+}
+
+function makeDecision(c,visible){
+  if(!visible.length)return;
+  const threats=visible.filter(v=>v.priority<0);
+  const attractions=visible.filter(v=>v.priority>0);
+
+  if(threats.length){
+    threats.sort((a,b)=>(a.priority-b.priority)||(a.distance-b.distance));
+    c.direction=getOppositeDirection(threats[0].direction);
+    return;
+  }
+
+  if(attractions.length){
+    attractions.sort((a,b)=>(b.priority-a.priority)||(a.distance-b.distance));
+    const t=attractions[0];
+    const dx=t.item.x-c.x,dy=t.item.y-c.y;
+    c.direction=Math.abs(dx)>=Math.abs(dy)?(dx>0?DIR.RIGHT:DIR.LEFT):(dy>0?DIR.DOWN:DIR.UP);
+  }
+}
+
+// ============================================================
+//  ITEM PROCESSORS (per cat)
+// ============================================================
+function processItemCollision(c,item){
+  if(item.type==='fish'){
+    const idx=items.indexOf(item);
+    if(idx!==-1)items.splice(idx,1);
+    c.state=CAT_STATE.EAT;c.stateTimer=STUN_DURATIONS.EAT;
+    messageDisplay.textContent='🐟 '+c.type+' is eating...';
+    return;
+  }
+  if(item.type==='box'){
+    item.hidingCat=true;
+    c.state=CAT_STATE.HIDE;c.stateTimer=STUN_DURATIONS.HIDE;
+    messageDisplay.textContent='📦 '+c.type+' hid in the box!';
+    return;
+  }
+  if(item.type==='yarn'){
+    item.durability=(item.durability??3)-1;
+    c.state=CAT_STATE.YARN_STUN;c.stateTimer=STUN_DURATIONS.YARN_STUN;
+    messageDisplay.textContent='🧶 '+c.type+' playing with yarn ('+item.durability+' left)';
+    if(item.durability<=0){const idx=items.indexOf(item);if(idx!==-1)items.splice(idx,1);}
+    return;
+  }
+  if(item.type==='mirror'){
+    c.state=CAT_STATE.MIRROR_PAUSE;c.stateTimer=STUN_DURATIONS.MIRROR_PAUSE;
+    messageDisplay.textContent='🪞 '+c.type+' stares at mirror...';
+    return;
+  }
+  if(item.type==='laser'&&item.on){
+    c.state=CAT_STATE.PLAY;
+    messageDisplay.textContent='🔴 '+c.type+' plays with laser!';
+    return;
+  }
+}
+
+// ============================================================
+//  CUCUMBER / VACUUM (per cat)
+// ============================================================
+function checkAdjacentCucumber(c){
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+  for(const dir of[DIR.UP,DIR.DOWN,DIR.LEFT,DIR.RIGHT]){
+    const ax=c.x+DX[dir],ay=c.y+DY[dir];
+    if(ax<0||ax>=cols||ay<0||ay>=rows)continue;
+    const cuc=items.find(it=>it.x===ax&&it.y===ay&&it.type==='cucumber'&&it.hidden);
+    if(!cuc)continue;
+    cuc.hidden=false;
+    const bx=c.x-DX[dir],by=c.y-DY[dir];
+    if(isWalkable(bx,by,c.type)){c.x=bx;c.y=by;}
+    c.direction=getOppositeDirection(dir);
+    c.state=CAT_STATE.SCARED;c.stateTimer=STUN_DURATIONS.SCARED;
+    messageDisplay.textContent='🥒 '+c.type+' scared by cucumber!';
+    return true;
+  }
+  return false;
+}
+
+function checkVacuumScare(c){
+  for(const item of items){
+    if(item.type!=='vacuum')continue;
+    if(Math.abs(c.x-item.x)+Math.abs(c.y-item.y)<=1&&c.state===CAT_STATE.WALK){
+      c.direction=getOppositeDirection(item.dir);
+      c.state=CAT_STATE.SCARED;c.stateTimer=STUN_DURATIONS.SCARED;
+      messageDisplay.textContent='🤖 '+c.type+' scared by vacuum!';
+      return true;
+    }
+  }
+  return false;
+}
+
+function updateVacuumPatrol(){
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+  for(const item of items){
+    if(item.type!=='vacuum')continue;
+    if(item.startX===undefined)item.startX=item.x;
+    item.tickCounter=(item.tickCounter||0)+1;
+    if(item.tickCounter%3!==0)continue;
+    const nx=item.x+DX[item.dir],ny=item.y+DY[item.dir];
+    const distFromStart=Math.abs(nx-item.startX);
+    if(distFromStart>item.patrolMax||nx<0||nx>=cols||ny<0||ny>=rows||grid[ny][nx]===TILE.WALL)
+      item.dir=getOppositeDirection(item.dir);
+    else{item.x=nx;item.y=ny;}
+  }
+}
+
+// ============================================================
+//  PER-CAT PROCESSOR
+// ============================================================
+function processCatTick(c){
+  // State timers
+  if(c.state!==CAT_STATE.WALK){
+    if(c.state===CAT_STATE.PLAY||c.state===CAT_STATE.STOP)return true;
+    if(c.state===CAT_STATE.DIE)return true;
+    c.stateTimer--;
+    if(c.stateTimer<=0){
+      if(c.state===CAT_STATE.HIDE)
+        items.forEach(it=>{if(it.hidingCat)it.hidingCat=false;});
+      c.state=CAT_STATE.WALK;
+    }
+    return false;
+  }
+
+  // Vacuum scare
+  if(checkVacuumScare(c))return true;
+
+  // Cucumber
+  if(checkAdjacentCucumber(c))return true;
+
+  // Vision + decision
+  makeDecision(c,scanVision(c));
+
+  // Movement
+  const nx=c.x+DX[c.direction]*c.speed,ny=c.y+DY[c.direction]*c.speed;
+
+  if(!canMoveTo(nx,ny,c.type)){
+    c.state=CAT_STATE.STOP;
+    if(nx>=0&&nx<canvas.width/CELL&&ny>=0&&ny<canvas.height/CELL&&grid[ny]?.[nx]===TILE.GOAL){
+      // Move onto goal even if it looks blocked (goal is walkable)
+      c.x=nx;c.y=ny;
+      c.state=CAT_STATE.WALK;
+      return true;
+    }
+    return true;
+  }
+
+  // Goal check
+  if(grid[ny][nx]===TILE.GOAL&&canMoveTo(nx,ny,c.type)){
+    c.x=nx;c.y=ny;
+    return true;
+  }
+
+  // Execute move
+  c.x=nx;c.y=ny;
+
+  // Hole check
+  if(grid[c.y][c.x]===TILE.HOLE){
+    c.state=CAT_STATE.DIE;
+    return true;
+  }
+
+  // Item collision
+  const item=items.find(it=>it.x===c.x&&it.y===c.y);
+  if(item)processItemCollision(c,item);
+
+  return true;
+}
+
+// ============================================================
+//  WIN / LOSE
+// ============================================================
+function checkWin(){
+  // All fish eaten
+  if(items.some(i=>i.type==='fish'))return false;
+  // All cats at goals and alive
+  return cats.every(c=>goals.some(g=>g.x===c.x&&g.y===c.y)&&c.state!==CAT_STATE.DIE);
+}
+
+function winGame(){
+  stopSimulation();
+  gameMode=GAME_MODE.EDIT;
+  const stars=retryCount===0?3:(retryCount<3?2:1);
+  winStars.textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
+  winDetail.textContent='Retries: '+retryCount;
+  winOverlay.classList.add('show');
+  if(currentLevelIndex>=Levels.length-1)
+    btnNext.textContent='🏁 All Complete!';
+  else
+    btnNext.textContent='▶ Next Level';
+  updateUI();
+}
+
+function loseGame(reason){
+  stopSimulation();
+  gameMode=GAME_MODE.EDIT;
+  messageDisplay.textContent='💀 '+reason;
+  updateUI();
+  render();
+}
+
+// ============================================================
+//  TICK  (Game Loop)
+// ============================================================
+function tick(){
+  if(gameMode!==GAME_MODE.SIMULATION)return;
+
+  // Timer
+  totalTicks++;
+  if(totalTicks%TICKS_PER_SEC===0){
+    levelTimer--;
+    if(levelTimer<=0){loseGame('Time expired!');return;}
+  }
+
+  // Vacuum patrol
+  updateVacuumPatrol();
+
+  // Process each cat
+  for(const c of cats){
+    // Lose if any cat died
+    if(c.state===CAT_STATE.DIE){loseGame(c.type+' fell into a hole!');return;}
+    processCatTick(c);
+  }
+
+  // Win check
+  if(checkWin()){winGame();return;}
+
+  updateUI();
+  render();
+}
+
+// ============================================================
+//  SIMULATION CONTROL
+// ============================================================
+function startSimulation(){
+  if(gameMode===GAME_MODE.SIMULATION)return;
+  gameMode=GAME_MODE.SIMULATION;
+  for(const c of cats)c.state=CAT_STATE.WALK;
+  messageDisplay.textContent='';
+  simulationInterval=setInterval(tick,TICK_MS);
+  updateUI();
+  render();
+}
+
+function stopSimulation(){
+  if(simulationInterval){clearInterval(simulationInterval);simulationInterval=null;}
+}
+
+// ============================================================
+//  RENDERING
+// ============================================================
+function drawGrid(){
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+  for(let r=0;r<rows;r++){
+    for(let c=0;c<cols;c++){
+      const type=grid[r][c];
+      if(type===TILE.HOLE){
+        // Dark hole with pit effect
+        ctx.fillStyle='#1a0e0a';
+        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+        ctx.strokeStyle='#3d2218';
+        ctx.lineWidth=2;
+        ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
+        // Inner shadow
+        ctx.strokeStyle='#0a0503';
+        ctx.lineWidth=1;
+        ctx.strokeRect(c*CELL+4,r*CELL+4,CELL-8,CELL-8);
+      }else{
+        ctx.fillStyle=TILE_COLORS[type]||TILE_COLORS[TILE.NORMAL];
+        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
       }
-      addToInventory(id){
-        if(ItemDB[id]) this.inventory.push({...ItemDB[id],score:ItemDB[id].base});
-      }
-      placeOnBoard(id, targetR, targetC){
-        if(!ItemDB[id]) return false;
-        if(targetR !== undefined && targetC !== undefined && targetR>=0 && targetR<5 && targetC>=0 && targetC<5){
-          this.grid[targetR][targetC] = {...ItemDB[id], score: ItemDB[id].base};
-          return 'grid';
-        }
-        const empty=getEmptyCells();
-        if(empty.length>0){
-          const [r,c]=empty[Math.floor(Math.random()*empty.length)];
-          this.grid[r][c]={...ItemDB[id],score:ItemDB[id].base};
-          return 'grid';
-        }
-        this.addToInventory(id);
-        return 'inventory';
-      }
-      removeFromInventory(id){
-        const idx=this.inventory.findIndex(i=>i.id===id);
-        if(idx>=0){ this.inventory.splice(idx,1); return true; }
-        // Also remove from grid
-        for(let r=0;r<5;r++)for(let c=0;c<5;c++){
-          if(this.grid[r][c]&&this.grid[r][c].id===id){
-            this.grid[r][c]=null;
-            return true;
-          }
-        }
-        return false;
-      }
-      getTrashCount(){
-        return this.inventory.filter(i=>i.faction===F.TRASH).length;
-      }
-      getGridItemCount(){
-        let n=0;
-        for(let r=0;r<5;r++)for(let c=0;c<5;c++) if(this.grid[r][c]) n++;
-        return n;
+      ctx.strokeStyle='#999';
+      ctx.lineWidth=1;
+      ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
+
+      // Goal tile decoration
+      if(type===TILE.GOAL){
+        const cx=c*CELL+CELL/2,cy=r*CELL+CELL/2;
+        ctx.font='28px serif';
+        ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillText('🐟',cx,cy);
       }
     }
+  }
+}
 
-    // ============================================================
-    // GAME ENGINE
-    // ============================================================
-    const g = new Game();
-    let isSpinning = false;
+function drawItems(){
+  for(const item of items){
+    const cx=item.x*CELL+CELL/2,cy=item.y*CELL+CELL/2;
 
-    function log(msg, type = 'combo') {
-      g.comboLog.push({ msg, type });
-      renderComboLog();
+    if(item.type==='cucumber'&&item.hidden){
+      ctx.font='16px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.globalAlpha=.25;ctx.fillText('?',cx,cy);ctx.globalAlpha=1;
+      continue;
     }
 
-    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-    function getEmptyCells() {
-      const cells = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          if (!g.grid[r][c]) cells.push([r, c]);
-      return cells;
-    }
-
-    function shuffleArray(arr) {
-      for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+    if(item.type==='laser'){
+      if(item.on){
+        ctx.save();
+        ctx.shadowColor='red';ctx.shadowBlur=14;
+        ctx.beginPath();ctx.moveTo(cx,cy-12);ctx.lineTo(cx+12,cy);
+        ctx.lineTo(cx,cy+12);ctx.lineTo(cx-12,cy);ctx.closePath();
+        ctx.fillStyle='red';ctx.fill();
+        ctx.shadowBlur=0;ctx.restore();
+        ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);
+        ctx.fillStyle='#fff';ctx.fill();ctx.closePath();
+      }else{
+        ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);
+        ctx.fillStyle='#555';ctx.fill();
+        ctx.strokeStyle='#777';ctx.lineWidth=2;ctx.stroke();ctx.closePath();
+        ctx.font='14px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.fillStyle='#aaa';ctx.fillText('OFF',cx,cy);
       }
-      return arr;
+      continue;
     }
 
-    async function spin() {
-      if (isSpinning) return;
-      if (g.inventory.length === 0) { showToast('Kho đồ trống! Không thể spin.'); return; }
-      isSpinning = true;
-      g.hasAmulet = false;
-      g.lockedCells = new Set();
-      g.comboMultiplier = 1;
-      g.destroyedCount = 0;
-      g.lastTurnScore = g.score;
-      g.turnBonus = 0;
-      g.itemBonuses = [];
+    if(item.type==='vacuum'){
+      ctx.font='28px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('🤖',cx,cy);
+      const ad=item.dir||DIR.RIGHT;
+      ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(cx,cy);
+      ctx.lineTo(cx+DX[ad]*12,cy+DY[ad]*12);ctx.stroke();
+      continue;
+    }
 
-      document.getElementById('spinBtn').disabled = true;
-      document.getElementById('spinBtnText').textContent = '⏳ ĐANG QUAY...';
+    const emoji=ITEM_EMOJI[item.type];
+    if(emoji){
+      ctx.font='26px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(emoji,cx,cy);
+    }
+  }
+}
 
-      log('=== 🎰 SPIN ===', 'combo');
-      log(`📊 Stage ${g.stage} | Turn ${g.turn + 1}/${SPINS_PER_STAGE}`, 'combo');
+function drawLaserBeams(){
+  for(const item of items){
+    if(item.type!=='laser'||!item.on)continue;
+    let bx=item.x,by=item.y,curDir=DIR.RIGHT,reflected=false;
+    const cols=canvas.width/CELL,rows=canvas.height/CELL;
+    ctx.save();
+    ctx.strokeStyle='rgba(255,50,50,.45)';ctx.lineWidth=3;
+    ctx.shadowColor='red';ctx.shadowBlur=6;
+    ctx.beginPath();ctx.moveTo(item.x*CELL+CELL/2,item.y*CELL+CELL/2);
 
-      // Step 1: Draft from inventory → place on grid
-      const result = await startDraft();
-
-      if (result === 'skip' || result === 'sell') {
-        isSpinning = false;
-        document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE;
-        document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
-        return;
+    for(let s=0;s<10;s++){
+      const nx=bx+DX[curDir],ny=by+DY[curDir];
+      if(nx<0||nx>=cols||ny<0||ny>=rows)break;
+      if(grid[ny][nx]===TILE.WALL)break;
+      const mirror=items.find(it=>it.x===nx&&it.y===ny&&it.type==='mirror');
+      if(mirror&&!reflected){
+        ctx.lineTo(nx*CELL+CELL/2,ny*CELL+CELL/2);
+        bx=nx;by=ny;
+        curDir=curDir===DIR.RIGHT?DIR.DOWN:DIR.UP;
+        reflected=true;
+        ctx.lineTo(nx*CELL+CELL/2,ny*CELL+CELL/2);
+        continue;
       }
-
-      renderGrid();
-      await delay(400);
-
-      // Step 2: Animated evaluation
-      await animatedEvaluate();
-
-      // Step 7: Finalize turn
-      g.turn++;
-      renderDashboard();
-
-      if (g.turn >= SPINS_PER_STAGE) {
-        await delay(500);
-        validateQuota();
-      }
-
-      isSpinning = false;
-      document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE;
-      document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
+      bx=nx;by=ny;
+      ctx.lineTo(bx*CELL+CELL/2,by*CELL+CELL/2);
     }
+    ctx.stroke();ctx.restore();
+  }
+}
 
-    // ============================================================
-    // ANIMATED EVALUATION
-    // ============================================================
-    async function animatedEvaluate() {
-      g.interactions = [];
-      g._consumedTargets = new Set();
-      const cellEls = document.querySelectorAll('#grid > .cell');
+function drawCat(c){
+  const cc=CAT_COLORS[c.type]||CAT_COLORS.Orange;
+  const cx=c.x*CELL+CELL/2,cy=c.y*CELL+CELL/2;
+  const radius=CELL*cc.size;
 
-      const ctxBase = {
-        g,
-        grid: g.grid,
-        destroyedCount: 0,
-        addScore: (n) => { g.turnBonus += n; },
-        consume: (id) => {
-          g.destroyedCount++;
-          for (let r = 0; r < 5; r++)
-            for (let c = 0; c < 5; c++)
-              if (g.grid[r][c] && g.grid[r][c].id === id && !g._consumedTargets.has(r+','+c)) {
-                g._consumedTargets.add(r+','+c);
-                return true;
-              }
-          return g.removeFromInventory(id);
-        },
-        forceConsume: (id) => {
-          g.destroyedCount++;
-          for (let r = 0; r < 5; r++)
-            for (let c = 0; c < 5; c++)
-              if (g.grid[r][c] && g.grid[r][c].id === id && !g._consumedTargets.has(r+','+c)) {
-                g._consumedTargets.add(r+','+c);
-                return true;
-              }
-          return g.removeFromInventory(id);
-        },
-        log: (m, t) => log(m, t),
-        r: 0, c: 0, item: null, n8: [],
-        comboMultiplier: 1,
-        addBonus: (r, c, pts) => {
-          g.interactions.push({ sr: r, sc: c, tr: r, tc: c, pts, type: 'self' });
-          if (g.grid[r] && g.grid[r][c]) g.grid[r][c].score = (g.grid[r][c].score || 0) + pts;
-        },
-        addAnim: (sr, sc, tr, tc, pts, type) => {
-          g.interactions.push({ sr, sc, tr, tc, pts, type: type || 'attack' });
-          if (type === 'buff') {
-            if (g.grid[tr] && g.grid[tr][tc]) g.grid[tr][tc].score = (g.grid[tr][tc].score || 0) + pts;
-          } else {
-            if (g.grid[sr] && g.grid[sr][sc]) g.grid[sr][sc].score = (g.grid[sr][sc].score || 0) + pts;
-          }
-        }
-      };
+  // Body
+  ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);
+  ctx.fillStyle=cc.body;ctx.fill();
+  ctx.strokeStyle=cc.stroke;ctx.lineWidth=2;ctx.stroke();ctx.closePath();
 
-      // Pass 1: Global effects
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          const it = g.grid[r][c];
-          if (!it) continue;
-          const def = ItemDB[it.id];
-          if (def && def.onEval) {
-            const ctx = { ...ctxBase, r, c, item: it, n8: getNeighbors(r, c) };
-            def.onEval(ctx);
-          }
-        }
-      }
+  // State ring
+  const ring=STATE_RING_COLORS[c.state];
+  if(ring){
+    ctx.beginPath();ctx.arc(cx,cy,radius+4,0,Math.PI*2);
+    ctx.strokeStyle=ring.color;ctx.lineWidth=3;
+    if(ring.dashed)ctx.setLineDash([4,4]);
+    ctx.stroke();ctx.setLineDash([]);ctx.closePath();
+  }
 
-      // Pass 2: Adjacency effects
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          const it = g.grid[r][c];
-          if (!it) continue;
-          if (g.lockedCells.has(r + ',' + c)) continue;
-          const def = ItemDB[it.id];
-          if (def && def.adjEffect) {
-            const ctx = { ...ctxBase, r, c, item: it, n8: getNeighbors(r, c) };
-            def.adjEffect(ctx);
-          }
-        }
-      }
+  // DIE = X eyes
+  if(c.state===CAT_STATE.DIE){
+    ctx.strokeStyle='#fff';ctx.lineWidth=3;
+    ctx.beginPath();ctx.moveTo(cx-8,cy-5);ctx.lineTo(cx-3,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-3,cy-5);ctx.lineTo(cx-8,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+3,cy-5);ctx.lineTo(cx+8,cy);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx+8,cy-5);ctx.lineTo(cx+3,cy);ctx.stroke();
+    return;
+  }
 
-      // Apply pending cat bonus
-      if (g.pendingCatBonus) {
-        for (let r = 0; r < 5; r++)
-          for (let c = 0; c < 5; c++) {
-            const it = g.grid[r][c];
-            if (it && it.id === 'meo_thuong') it.score = (it.score || it.base) * 2;
-          }
-        g.pendingCatBonus = false;
-      }
+  // Ninja headband
+  if(c.type==='Ninja'){
+    ctx.strokeStyle='#e94560';ctx.lineWidth=4;
+    ctx.beginPath();
+    ctx.moveTo(cx-radius-2,cy-radius*.6);
+    ctx.lineTo(cx+radius+2,cy-radius*.6);ctx.stroke();ctx.closePath();
+    const td=(c.x+c.y)%2===0?1:-1;
+    ctx.beginPath();
+    ctx.moveTo(cx+radius*.8,cy-radius*.6);
+    ctx.lineTo(cx+td*(radius+6)+td*4,cy-radius*1.4);ctx.stroke();ctx.closePath();
+  }
 
-      // PLAY INTERACTIONS ANIMATION
-      for (const ia of g.interactions) {
-        const sidx = ia.sr * 5 + ia.sc;
-        const tidx = ia.tr * 5 + ia.tc;
-        const sEl = cellEls[sidx];
-        const tEl = cellEls[tidx];
-        if (!sEl) continue;
+  // Eyes
+  const eoX=(DX[c.direction]||0)*3,eoY=(DY[c.direction]||0)*3;
+  for(const side of[-1,1]){
+    const ex=cx+side*(radius*.4)+eoX,ey=cy-radius*.15+eoY;
+    ctx.beginPath();ctx.arc(ex,ey,radius*.17,0,Math.PI*2);
+    ctx.fillStyle='#fff';ctx.fill();ctx.closePath();
+    ctx.beginPath();
+    ctx.arc(ex+eoX*.3,ey+eoY*.3,radius*.09,0,Math.PI*2);
+    ctx.fillStyle='#000';ctx.fill();ctx.closePath();
+  }
 
-        if (ia.type === 'self' && sEl) {
-          sEl.classList.add('hl-self');
-          if (ia.pts) showFloatingScore(sEl, ia.pts, '#fbbf24');
-          await delay(350);
-          sEl.classList.remove('hl-self');
-          continue;
-        }
+  // Ears
+  for(const side of[-1,1]){
+    ctx.beginPath();
+    ctx.moveTo(cx+side*(radius*.8),cy-radius*.7);
+    ctx.lineTo(cx+side*(radius*1.2),cy-radius*1.3);
+    ctx.lineTo(cx+side*(radius*.35),cy-radius*1.15);
+    ctx.closePath();ctx.fillStyle=cc.body;ctx.fill();
+    ctx.strokeStyle=cc.stroke;ctx.lineWidth=1.5;ctx.stroke();
+  }
 
-        // Source → Target animation
-        if (sEl && tEl && ia.type !== 'self') {
-          const sRect = sEl.getBoundingClientRect();
-          const tRect = tEl.getBoundingClientRect();
-          const dx = tRect.left - sRect.left;
-          const dy = tRect.top - sRect.top;
-
-          sEl.classList.add('hl-source');
-          tEl.classList.add('hl-target');
-          await delay(250);
-
-          // Dash source toward target
-          if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
-            sEl.classList.add('dash-to-target');
-            sEl.style.transform = `translate(${dx * 0.4}px, ${dy * 0.4}px) scale(1.1)`;
-          }
-          await delay(200);
-
-          // Show floating score at the cell that gets points
-          if (ia.pts) {
-            const scoreCell = (ia.type === 'buff') ? tEl : sEl;
-            const scoreColor = ia.type === 'attack' ? '#ef4444' : ia.type === 'buff' ? '#22c55e' : '#f59e0b';
-            showFloatingScore(scoreCell, ia.pts, scoreColor);
-          }
-          await delay(150);
-
-          sEl.style.transform = '';
-          sEl.classList.remove('dash-to-target', 'hl-source');
-          if (tEl) tEl.classList.remove('hl-target');
-          await delay(100);
-        }
-      }
-
-      // Cleanup consumed items from grid with fadeout
-      for (const key of g._consumedTargets) {
-        const [r, c] = key.split(',').map(Number);
-        const idx = r * 5 + c;
-        if (cellEls[idx]) {
-          cellEls[idx].classList.add('cell-fadeout');
-        }
-      }
-      await delay(300);
-
-      // Actually remove consumed items from grid
-      for (const key of g._consumedTargets) {
-        const [r, c] = key.split(',').map(Number);
-        g.grid[r][c] = null;
-      }
-
-      renderGrid();
-      await delay(300);
-
-      // Pass 3: Calculate final turn score
-      let turnScore = 0;
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++) {
-          const it = g.grid[r][c];
-          if (!it) continue;
-          if (g.lockedCells.has(r + ',' + c)) continue;
-          let sc = it.score || it.base || 0;
-          if (g.isBeggarEvolved && it.id === 'lao_an_may') sc = 150;
-          turnScore += sc;
-        }
-
-      // Permanent bonuses
-      let totalBonus = g.permGeneralBonus + g.permBeggarBonus + g.permCatBonus + g.tyHieuBonus;
-      if (totalBonus > 0) {
-        turnScore += totalBonus;
-        log(`🏆 Thưởng vĩnh viễn: +${totalBonus}`, 'combo');
-      }
-
-      // Global multiplier
-      if (g.globalMultiplier > 1) {
-        const bonus = Math.floor(turnScore * (g.globalMultiplier - 1));
-        turnScore += bonus;
-        log(`🔥 Hệ số x${g.globalMultiplier.toFixed(1)}: +${bonus}`, 'combo');
-      }
-
-      // Combo multiplier
-      if (g.comboMultiplier > 1) {
-        const bonus = Math.floor(turnScore * (g.comboMultiplier - 1));
-        turnScore += bonus;
-        log(`🔯 Combo x${g.comboMultiplier}: +${bonus}`, 'combo');
-      }
-
-      turnScore += g.turnBonus;
-      if (turnScore > 0) {
-        g.score += turnScore;
-        await animateScoreToTotal(turnScore);
-        log(`✅ +${turnScore} điểm! Tổng: ${g.score}`, 'combo');
-      } else {
-        log(`✅ +0 điểm`, 'combo');
-      }
-
-      renderGrid();
-      renderDashboard();
+  // Whiskers
+  ctx.strokeStyle='#555';ctx.lineWidth=1;
+  for(const side of[-1,1])
+    for(let i=-1;i<=1;i++){
+      ctx.beginPath();
+      ctx.moveTo(cx+side*(radius*.55),cy+i*(radius*.17));
+      ctx.lineTo(cx+side*(radius*1.25),cy+i*(radius*.28));
+      ctx.stroke();
     }
+}
 
-    function showFloatingScore(cellEl, pts, color) {
-      if (!cellEl) return;
-      color = color || '#fbbf24';
-      const rect = cellEl.getBoundingClientRect();
-      const el = document.createElement('div');
-      el.className = 'score-float text-lg';
-      el.style.left = (rect.left + rect.width / 2 - 20) + 'px';
-      el.style.top = (rect.top - 10) + 'px';
-      el.style.color = color;
-      el.style.textShadow = `0 0 10px ${color}cc`;
-      el.textContent = (pts > 0 ? '+' : '') + pts;
-      document.body.appendChild(el);
-      setTimeout(() => el.remove(), 1100);
+function render(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawGrid();
+  drawItems();
+  drawLaserBeams();
+  cats.forEach(drawCat);
+}
+
+// ============================================================
+//  UI UPDATES
+// ============================================================
+function updateUI(){
+  const lv=Levels[currentLevelIndex];
+  hudName.textContent='Level '+(currentLevelIndex+1)+': '+lv.name;
+  hudTimer.textContent='⏱ '+Math.max(0,levelTimer)+'s';
+  hudEnergy.textContent='⚡ '+currentEnergy+' / '+lv.maxEnergy;
+  hudRetry.textContent='🔄 '+retryCount;
+
+  modeDisplay.textContent=gameMode===GAME_MODE.EDIT?'EDIT MODE':'SIMULATION MODE';
+  const statuses=cats.map(c=>{
+    let s=c.type+': '+c.state;
+    if(c.stateTimer>0)s+=' ('+Math.ceil(c.stateTimer*TICK_MS)+'ms)';
+    return s;
+  }).join(' | ');
+  statusDisplay.textContent=statuses;
+
+  btnGo.disabled=gameMode===GAME_MODE.SIMULATION;
+
+  energyDisplay.textContent=currentEnergy+' / '+lv.maxEnergy;
+  energyFill.style.width=(currentEnergy/lv.maxEnergy*100)+'%';
+}
+
+// ============================================================
+//  EVENTS
+// ============================================================
+btnGo.addEventListener('click',startSimulation);
+btnReset.addEventListener('click',resetGame);
+
+btnNext.addEventListener('click',()=>{
+  winOverlay.classList.remove('show');
+  if(currentLevelIndex<Levels.length-1)loadLevel(currentLevelIndex+1);
+  else reloadLevel();
+});
+
+// Item selector
+itemButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    itemButtons.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedItemType=btn.dataset.item;
+    messageDisplay.textContent='Selected: '+selectedItemType+' (Cost: '+(ENERGY_COST[selectedItemType]||'?')+'⚡)';
+  });
+});
+if(itemButtons[0])itemButtons[0].classList.add('active');
+
+// Canvas click
+canvas.addEventListener('click',(e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const col=Math.floor((e.clientX-rect.left)/CELL);
+  const row=Math.floor((e.clientY-rect.top)/CELL);
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+  if(col<0||col>=cols||row<0||row>=rows)return;
+
+  // Simulation: toggle laser
+  if(gameMode===GAME_MODE.SIMULATION){
+    const item=items.find(it=>it.x===col&&it.y===row&&it.type==='laser');
+    if(item){item.on=!item.on;
+      messageDisplay.textContent='Laser '+(item.on?'🔴 ON':'⭕ OFF');
+      render();
     }
-
-    async function animateScoreToTotal(pts) {
-      const gridEl = document.getElementById('grid');
-      const scoreEl = document.getElementById('scoreDisplay');
-      const gridRect = gridEl.getBoundingClientRect();
-      const scoreRect = scoreEl.getBoundingClientRect();
-
-      // Create flying number
-      const fly = document.createElement('div');
-      fly.className = 'score-fly text-2xl font-black';
-      fly.textContent = '+' + pts;
-      fly.style.left = (gridRect.left + gridRect.width / 2 - 30) + 'px';
-      fly.style.top = (gridRect.top + gridRect.height / 2 - 20) + 'px';
-      fly.style.color = '#fbbf24';
-      fly.style.textShadow = '0 0 20px rgba(250,204,21,0.9)';
-      fly.style.fontSize = '32px';
-      document.body.appendChild(fly);
-
-      // Trigger reflow
-      fly.getBoundingClientRect();
-
-      // Fly to score
-      fly.style.left = (scoreRect.left + scoreRect.width / 2 - 20) + 'px';
-      fly.style.top = (scoreRect.top - 10) + 'px';
-      fly.style.fontSize = '18px';
-      fly.style.opacity = '0.5';
-
-      await delay(800);
-
-      // Flash score
-      scoreEl.style.transform = 'scale(1.3)';
-      scoreEl.style.transition = 'transform 0.2s';
-      await delay(200);
-      scoreEl.style.transform = 'scale(1)';
-
-      fly.remove();
-    }
-
-    function getNeighbors(r, c) {
-      const dirs = [[-1, -1], [-1, 0], [-1, 1], [0, -1], [0, 1], [1, -1], [1, 0], [1, 1]];
-      const res = [];
-      for (const d of dirs) {
-        const nr = r + d[0], nc = c + d[1];
-        if (nr >= 0 && nr < 5 && nc >= 0 && nc < 5) res.push({ r: nr, c: nc });
-      }
-      return res;
-    }
-
-    // ============================================================
-    // DRAFT
-    // ============================================================
-    function startDraft() {
-      return new Promise((resolve) => {
-        // Pick up to 3 unique items from inventory
-        const uniqueItems = [];
-        const seen = new Set();
-        for (const it of g.inventory) {
-          if (!seen.has(it.id)) {
-            seen.add(it.id);
-            uniqueItems.push(ItemDB[it.id]);
-          }
-        }
-        if (uniqueItems.length === 0) {
-          showToast('Kho đồ trống! Không thể chọn.');
-          resolve('skip');
-          return;
-        }
-        shuffleArray(uniqueItems);
-        const chosen = uniqueItems.slice(0, Math.min(3, uniqueItems.length));
-        showDraft(chosen, resolve);
-      });
-    }
-
-    function showDraft(items, resolveDraft) {
-      const overlay = document.getElementById('draftOverlay');
-      const container = document.getElementById('draftCards');
-      container.innerHTML = '';
-      overlay.classList.remove('hidden');
-
-      for (const it of items) {
-        const card = document.createElement('div');
-        const factionColors = { cats: '#f59e0b', sages: '#dc2626', plants: '#059669', consumable: '#7c3aed', treasure: '#eab308', luck: '#06b6d4', overload: '#ea580c', trash: '#6b7280' };
-        const rarityColors = { thường: 'border-gray-500 bg-gray-800/80', trung_bình: 'border-emerald-500 bg-gray-800/80', hiếm: 'border-blue-500 bg-blue-900/30', cực_hiếm: 'border-purple-500 bg-purple-900/30' };
-        card.className = `card-3d border-2 ${rarityColors[it.rarity]||'border-gray-600 bg-gray-800/80'} rounded-xl p-4 cursor-pointer text-center`;
-        card.style.borderColor = factionColors[it.faction] || '#6b7280';
-        card.innerHTML = `
-          <div class="text-5xl mb-2">${it.emoji||'❓'}</div>
-          <div class="font-bold text-sm mb-1 text-white">${it.name}</div>
-          <div class="text-xs text-gray-400 mb-1 uppercase">${it.rarity}</div>
-          <div class="text-lg font-bold ${it.base>0?'text-green-400':'text-gray-400'}">${it.base>0?'+'+it.base:'+0'}</div>
-          <div class="text-[10px] text-gray-500 mt-2 leading-tight">${it.desc||''}</div>
-        `;
-        card.onclick = () => selectDraft(it.id, resolveDraft);
-        container.appendChild(card);
-      }
-    }
-
-    async function selectDraft(id, resolveDraft) {
-      // Remove item from inventory
-      const idx = g.inventory.findIndex(it => it.id === id);
-      if (idx === -1) {
-        showToast('Item không còn trong kho!');
-        resolveDraft('skip');
-        return;
-      }
-      const item = g.inventory.splice(idx, 1)[0];
-      closeDraft();
-      renderGrid();
-
-      const empty = getEmptyCells();
-      if (empty.length > 0) {
-        const [ec] = empty.splice(Math.floor(Math.random() * empty.length), 1);
-        const targetR = ec[0];
-        const targetC = ec[1];
-        log(`📥 Đặt: ${item.name} vào ô [${targetR+1},${targetC+1}]`, 'combo');
-
-        const oldItems = [];
-        for (let r = 0; r < 5; r++)
-          for (let c = 0; c < 5; c++)
-            if (g.grid[r][c] && (r !== targetR || c !== targetC)) {
-              oldItems.push({ item: g.grid[r][c], r, c });
-              g.grid[r][c] = null;
-            }
-
-        const allCells = [];
-        for (let r = 0; r < 5; r++)
-          for (let c = 0; c < 5; c++)
-            if (r !== targetR || c !== targetC) allCells.push([r, c]);
-
-        shuffleArray(allCells);
-        for (let i = 0; i < Math.min(oldItems.length, allCells.length); i++) {
-          const [r, c] = allCells[i];
-          g.grid[r][c] = oldItems[i].item;
-        }
-
-        g.grid[targetR][targetC] = item;
-        renderGrid();
-        renderDashboard();
-        resolveDraft('placed');
-        return;
-      }
-
-      // Board is full → show placement overlay for swap/sell/skip
-      const decision = await showPlacementOverlay(id);
-
-      if (decision.action === 'skip') {
-        g.addToInventory(id);
-        log(`⏭ Bỏ qua: ${item.name} (trả lại kho)`, 'combo');
-        renderDashboard();
-        resolveDraft('skip');
-        return;
-      }
-
-      if (decision.action === 'sell') {
-        g.score += item.base || 0;
-        log(`💰 Bán: ${item.name} +${item.base||0} điểm`, 'combo');
-        renderDashboard();
-        resolveDraft('sell');
-        return;
-      }
-
-      // Place or Replace on grid
-      let targetR, targetC;
-      if (decision.action === 'replace') {
-        targetR = decision.r;
-        targetC = decision.c;
-        const oldItem = g.grid[targetR][targetC];
-        if (oldItem) log(`🔄 Thay thế: ${oldItem.name} → ${item.name}`, 'combo');
-      } else {
-        const empty = getEmptyCells();
-        if (empty.length === 0) {
-          showToast('Grid đã đầy! Item trả lại kho.');
-          g.addToInventory(id);
-          renderDashboard();
-          resolveDraft('skip');
-          return;
-        }
-        const [ec] = empty.splice(Math.floor(Math.random() * empty.length), 1);
-        targetR = ec[0]; targetC = ec[1];
-        log(`📥 Đặt: ${item.name} vào ô [${targetR+1},${targetC+1}]`, 'combo');
-      }
-
-      // Shuffle existing items (excluding target cell)
-      const oldItems = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          if (g.grid[r][c] && (r !== targetR || c !== targetC)) {
-            oldItems.push({ item: g.grid[r][c], r, c });
-            g.grid[r][c] = null;
-          }
-
-      const allCells = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++)
-          if (r !== targetR || c !== targetC) allCells.push([r, c]);
-
-      shuffleArray(allCells);
-      for (let i = 0; i < Math.min(oldItems.length, allCells.length); i++) {
-        const [r, c] = allCells[i];
-        g.grid[r][c] = oldItems[i].item;
-      }
-
-      // Place new item
-      g.grid[targetR][targetC] = item;
-
-      renderGrid();
-      renderDashboard();
-      resolveDraft('placed');
-    }
-
-    function closeDraft() {
-      document.getElementById('draftOverlay').classList.add('hidden');
-    }
-
-    // ============================================================
-    // PLACEMENT OVERLAY (Place / Skip / Sell / Replace)
-    // ============================================================
-    let placementResolve = null;
-    let placementItemId = null;
-    let inReplaceMode = false;
-
-    function showPlacementOverlay(itemId) {
-      return new Promise((resolve) => {
-        placementResolve = resolve;
-        placementItemId = itemId;
-        inReplaceMode = false;
-        const def = ItemDB[itemId];
-        if (!def) { resolve({ action: 'skip' }); return; }
-
-        document.getElementById('placementEmoji').textContent = def.emoji || '❓';
-        document.getElementById('placementName').textContent = def.name;
-        document.getElementById('placementBase').textContent = 'Base: +' + (def.base || 0);
-        document.getElementById('placementDesc').textContent = def.desc || '';
-        document.getElementById('replaceModeText').classList.add('hidden');
-        // Board is full → only allow swap/sell/skip
-        document.getElementById('placeBtn').textContent = '🔄 Swap (Thay thế)';
-        document.getElementById('placeBtn').disabled = false;
-
-        document.getElementById('placementOverlay').classList.remove('hidden');
-      });
-    }
-
-    function closePlacementOverlay() {
-      document.getElementById('placementOverlay').classList.add('hidden');
-      exitReplaceMode();
-      placementResolve = null;
-      placementItemId = null;
-    }
-
-    function enterReplaceMode() {
-      inReplaceMode = true;
-      const overlay = document.getElementById('placementOverlay');
-      overlay.style.pointerEvents = 'none';
-      overlay.classList.add('placement-replace');
-      document.getElementById('replaceModeText').classList.remove('hidden');
-      document.getElementById('placeBtn').textContent = '🔄 Chọn ô để thay thế...';
-      document.getElementById('placeBtn').disabled = true;
-      document.getElementById('skipBtn').disabled = true;
-      document.getElementById('sellBtn').disabled = true;
-      document.querySelectorAll('#grid > .cell').forEach((el, idx) => {
-        const r = Math.floor(idx / 5);
-        const c = idx % 5;
-        if (g.grid[r][c]) el.classList.add('cell-replace-mode');
-      });
-    }
-
-    function exitReplaceMode() {
-      inReplaceMode = false;
-      const overlay = document.getElementById('placementOverlay');
-      overlay.style.pointerEvents = 'auto';
-      overlay.classList.remove('placement-replace');
-      document.getElementById('replaceModeText').classList.add('hidden');
-      document.getElementById('placeBtn').textContent = '📍 Đặt lên Board';
-      document.getElementById('placeBtn').disabled = false;
-      document.getElementById('skipBtn').disabled = false;
-      document.getElementById('sellBtn').disabled = false;
-      document.querySelectorAll('#grid > .cell').forEach(el => el.classList.remove('cell-replace-mode'));
-    }
-
-    function handlePlaceClick() {
-      const empty = getEmptyCells();
-      if (empty.length > 0) {
-        if (placementResolve) placementResolve({ action: 'place' });
-        closePlacementOverlay();
-      } else {
-        enterReplaceMode();
-      }
-    }
-
-    function handleSkipClick() {
-      if (placementResolve) placementResolve({ action: 'skip' });
-      closePlacementOverlay();
-    }
-
-    function handleSellClick() {
-      if (placementResolve) placementResolve({ action: 'sell' });
-      closePlacementOverlay();
-    }
-
-    function handlePlacementCellClick(r, c) {
-      if (!inReplaceMode) return;
-      if (!g.grid[r][c]) return; // cell is empty, can't replace
-      if (placementResolve) placementResolve({ action: 'replace', r, c });
-      closePlacementOverlay();
-    }
-
-    // Wire up placement buttons
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('placeBtn').addEventListener('click', handlePlaceClick);
-      document.getElementById('skipBtn').addEventListener('click', handleSkipClick);
-      document.getElementById('sellBtn').addEventListener('click', handleSellClick);
-    });
-
-    // ============================================================
-    // STAGE REWARDS
-    // ============================================================
-    const stageRewards = {
-      1: ['thoi_vang','mang_non','to_lua'],
-      2: ['meo_tam_the','qua_trung','thuong_nhan'],
-      3: ['lao_an_may','binh_gom_co','tieu_binh'],
-      4: ['meo_ai_cap','than_y','ngoc_thach'],
-      5: ['phao_thu','bao_tai_rach','ruong_bau'],
-      6: ['ty_hieu','tran_phap','ngoc_ty'],
-    };
-
-    function getStageRewards(stage) {
-      const r = stageRewards[stage];
-      if (r) return r;
-      // Random rare items for stages beyond 6
-      const pool = Object.values(ItemDB).filter(it => it.rarity === 'hiếm' || it.rarity === 'cực_hiếm');
-      const chosen = [];
-      const seen = new Set();
-      while (chosen.length < 3 && pool.length > 0) {
-        const pick = pool[Math.floor(Math.random() * pool.length)];
-        if (!seen.has(pick.id)) { seen.add(pick.id); chosen.push(pick.id); }
-      }
-      return chosen;
-    }
-
-    function applyStageRewards(stageNum) {
-      const rewards = getStageRewards(stageNum);
-      for (const id of rewards) {
-        if (ItemDB[id]) {
-          g.addToInventory(id);
-          log(`🎁 Stage Reward: +${ItemDB[id].name}`, 'treasure');
-        }
-      }
-    }
-
-    // ============================================================
-    // QUOTA
-    // ============================================================
-    function validateQuota() {
-      if (g.score >= g.quota) {
-        const clearedStage = g.stage;
-        g.stage++;
-        g.quota = Math.floor(50 * Math.pow(1.4, g.stage - 1));
-        g.turn = 0;
-        g.isVictory = true;
-        const rewards = getStageRewards(clearedStage);
-        applyStageRewards(clearedStage);
-        document.getElementById('vicScore').textContent = g.score;
-        document.getElementById('vicStage').textContent = clearedStage;
-        const rewardNames = rewards.map(id => ItemDB[id] ? ItemDB[id].emoji + ItemDB[id].name : id).join(', ');
-        document.getElementById('vicRewards').textContent = '🎁 Rewards: ' + rewardNames;
-        document.getElementById('victoryOverlay').classList.remove('hidden');
-        log(`👑 Vượt quota Stage ${clearedStage}! Tiến vào Stage ${g.stage}!`, 'combo');
-      } else {
-        g.isGameOver = true;
-        document.getElementById('goScore').textContent = g.score;
-        document.getElementById('goStage').textContent = g.stage;
-        document.getElementById('goDeck').textContent = g.inventory.length;
-        document.getElementById('gameOverOverlay').classList.remove('hidden');
-        log('💀 GAME OVER', 'combo');
-      }
-    }
-
-    function continueGame() {
-      document.getElementById('victoryOverlay').classList.add('hidden');
-      g.isVictory = false;
-      document.getElementById('spinBtn').disabled = false;
-      renderDashboard();
-    }
-
-    function restartGame() {
-      const oldGridItems = [];
-      for (let r = 0; r < 5; r++)
-        for (let c = 0; c < 5; c++) oldGridItems.push(g.grid[r][c]);
-      g.reset();
-      document.getElementById('gameOverOverlay').classList.add('hidden');
-      document.getElementById('victoryOverlay').classList.add('hidden');
-      document.getElementById('draftOverlay').classList.add('hidden');
-      document.getElementById('inventoryOverlay').classList.add('hidden');
-      closePlacementOverlay();
-      document.getElementById('spinBtn').disabled = false;
-      document.getElementById('spinBtnText').textContent = '🎰 SPIN (Rút 1 Thẻ)';
-      renderGrid();
-      renderDashboard();
-      renderComboLog();
-      log('🔄 Game restarted!', 'combo');
-    }
-
-    // ============================================================
-    // UI CONTROLLER
-    // ============================================================
-    function renderGrid() {
-      const el = document.getElementById('grid');
-      el.innerHTML = '';
-      for (let r = 0; r < 5; r++) {
-        for (let c = 0; c < 5; c++) {
-          const cell = document.createElement('div');
-          cell.className = 'cell bg-gray-800/80 border rounded-lg flex flex-col items-center justify-center p-1 aspect-square';
-          cell.dataset.r = r;
-          cell.dataset.c = c;
-
-          const it = g.grid[r][c];
-          if (it) {
-            const def = ItemDB[it.id];
-            const color = def ? C[def.faction] : '#6b7280';
-            const isLocked = g.lockedCells.has(r + ',' + c);
-            cell.className = `cell bg-gray-800/80 border rounded-lg flex flex-col items-center justify-center p-1 aspect-square ${isLocked ? 'locked-cell' : ''}`;
-            cell.style.borderColor = color;
-
-            const emoji = document.createElement('div');
-            emoji.className = 'text-2xl leading-none';
-            emoji.textContent = def ? def.emoji : '❓';
-
-            const name = document.createElement('div');
-            name.className = 'text-[7px] leading-tight text-center text-gray-300 truncate w-full mt-0.5';
-            name.textContent = it.name || (def ? def.name : it.id);
-
-            const score = document.createElement('div');
-            const sc = it.score || it.base || 0;
-            score.className = 'text-[9px] font-bold grid-cell-score';
-            const fc = { cats: 'text-amber-400', sages: 'text-red-400', plants: 'text-emerald-400', consumable: 'text-purple-400', treasure: 'text-yellow-400', luck: 'text-cyan-400', overload: 'text-orange-400', trash: 'text-gray-500' };
-            score.className += ' ' + (fc[it.faction] || 'text-gray-400');
-            score.textContent = sc > 0 ? '+' + sc : '0';
-
-            cell.appendChild(emoji);
-            cell.appendChild(name);
-            cell.appendChild(score);
-
-            // Click for replace mode
-            cell.addEventListener('click', () => handlePlacementCellClick(r, c));
-            // Tooltip
-            cell.addEventListener('mouseenter', showTooltip);
-            cell.addEventListener('mousemove', moveTooltip);
-            cell.addEventListener('mouseleave', hideTooltip);
-          } else {
-            cell.addEventListener('click', () => handlePlacementCellClick(r, c));
-            cell.style.borderColor = 'rgba(75,85,99,0.3)';
-            const empty = document.createElement('div');
-            empty.className = 'text-gray-700 text-2xl';
-            empty.textContent = '·';
-            cell.appendChild(empty);
-          }
-          el.appendChild(cell);
-        }
-      }
-    }
-
-    // Tooltip
-    function showTooltip(e) {
-      const r = parseInt(e.currentTarget.dataset.r);
-      const c = parseInt(e.currentTarget.dataset.c);
-      const it = g.grid[r][c];
-      if (!it) return;
-      const def = ItemDB[it.id];
-      if (!def) return;
-      const tt = document.getElementById('tooltip');
-      document.getElementById('tooltipHeader').innerHTML = `${def.emoji} ${def.name}`;
-      const rarityColors = { thường: 'text-gray-400', trung_bình: 'text-green-400', hiếm: 'text-blue-400', cực_hiếm: 'text-purple-400' };
-      document.getElementById('tooltipRarity').innerHTML = `<span class="${rarityColors[def.rarity]||'text-gray-400'}">${def.rarity.toUpperCase()}</span> <span class="text-gray-500">| ${def.faction.toUpperCase()}</span>`;
-      document.getElementById('tooltipBase').textContent = 'Base: ' + (def.base > 0 ? '+' + def.base : '0') + ' | Current: ' + ((it.score||it.base||0) > 0 ? '+' + (it.score||it.base||0) : '0');
-      document.getElementById('tooltipDesc').textContent = def.desc || 'Không có hiệu ứng.';
-      tt.classList.remove('hidden');
-      positionTooltip(e);
-    }
-
-    function moveTooltip(e) { positionTooltip(e); }
-
-    function positionTooltip(e) {
-      const tt = document.getElementById('tooltip');
-      let x = e.clientX + 15, y = e.clientY + 15;
-      if (x + 260 > window.innerWidth) x = e.clientX - 270;
-      if (y + 150 > window.innerHeight) y = e.clientY - 160;
-      tt.style.left = x + 'px';
-      tt.style.top = y + 'px';
-    }
-
-    function hideTooltip() {
-      document.getElementById('tooltip').classList.add('hidden');
-    }
-
-    function renderDashboard() {
-      document.getElementById('scoreDisplay').textContent = g.score;
-      document.getElementById('quotaDisplay').textContent = g.quota;
-      document.getElementById('stageDisplay').textContent = g.stage;
-      document.getElementById('turnDisplay').textContent = g.turn + '/' + SPINS_PER_STAGE;
-      document.getElementById('deckCount').textContent = g.inventory.length;
-      document.getElementById('trashCount').textContent = g.getTrashCount();
-      document.getElementById('gridCount').textContent = g.getGridItemCount();
-      const pct = Math.min(100, Math.floor((g.score / g.quota) * 100));
-      document.getElementById('quotaBar').style.width = pct + '%';
-      document.getElementById('quotaBarText').textContent = pct + '%';
-      document.getElementById('spinBtn').disabled = g.isGameOver || g.turn >= SPINS_PER_STAGE || isSpinning;
-    }
-
-    function renderComboLog() {
-      const el = document.getElementById('comboLog');
-      el.innerHTML = '';
-      const entries = g.comboLog.slice(-40);
-      for (const e of entries) {
-        const div = document.createElement('div');
-        div.className = `log-entry log-${e.type || 'combo'} slide-up`;
-        div.textContent = e.msg;
-        el.appendChild(div);
-      }
-      el.scrollTop = el.scrollHeight;
-    }
-
-    function showInventory() {
-      const overlay = document.getElementById('inventoryOverlay');
-      const list = document.getElementById('inventoryList');
-      list.innerHTML = '';
-      overlay.classList.remove('hidden');
-      const counts = {};
-      for (const it of g.inventory) counts[it.id] = (counts[it.id] || 0) + 1;
-      const factionColors = { cats: '#f59e0b', sages: '#dc2626', plants: '#059669', consumable: '#7c3aed', treasure: '#eab308', luck: '#06b6d4', overload: '#ea580c', trash: '#6b7280' };
-      for (const [id, cnt] of Object.entries(counts)) {
-        const def = ItemDB[id];
-        if (!def) continue;
-        const div = document.createElement('div');
-        div.className = 'border bg-gray-800/50 rounded-lg p-2 text-center';
-        div.style.borderColor = factionColors[def.faction] || '#6b7280';
-        div.innerHTML = `<div class="text-2xl">${def.emoji||'❓'}</div><div class="text-[10px] font-bold truncate text-gray-200">${def.name}</div><div class="text-[9px] text-gray-400">x${cnt}</div>`;
-        list.appendChild(div);
-      }
-      if (Object.keys(counts).length === 0) list.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">Kho đồ trống...</div>';
-    }
-
-    function showItemDex() {
-      const overlay = document.getElementById('itemDexOverlay');
-      const list = document.getElementById('itemDexList');
-      const tabs = document.getElementById('itemDexTabs');
-      list.innerHTML = '';
-      tabs.innerHTML = '';
-      overlay.classList.remove('hidden');
-
-      const factions = [
-        { key: 'cats', label: '🐱 Miêu Linh', color: '#f59e0b' },
-        { key: 'sages', label: '⚔️ Danh Sĩ', color: '#dc2626' },
-        { key: 'plants', label: '🎋 Thực Vật', color: '#059669' },
-        { key: 'consumable', label: '🍶 Tiêu Thụ', color: '#7c3aed' },
-        { key: 'treasure', label: '💎 Cổ Vật', color: '#eab308' },
-        { key: 'luck', label: '🎲 May Rủi', color: '#06b6d4' },
-        { key: 'overload', label: '💥 Quá Tải', color: '#ea580c' },
-        { key: 'trash', label: '🗑️ Rác', color: '#6b7280' },
-      ];
-
-      let activeFaction = 'cats';
-
-      function renderDex(factionKey) {
-        list.innerHTML = '';
-        const items = Object.values(ItemDB).filter(it => it.faction === factionKey);
-        const rarityColors = { thường: 'text-gray-400', trung_bình: 'text-green-400', hiếm: 'text-blue-400', cực_hiếm: 'text-purple-400' };
-        const factionColor = factions.find(f => f.key === factionKey)?.color || '#6b7280';
-
-        if (items.length === 0) {
-          list.innerHTML = '<div class="col-span-full text-center text-gray-500 py-8">Không có item nào.</div>';
-          return;
-        }
-
-        for (const it of items) {
-          const div = document.createElement('div');
-          div.className = 'border bg-gray-800/50 rounded-lg p-2 text-center text-xs';
-          div.style.borderColor = factionColor;
-          div.innerHTML = `
-            <div class="text-2xl mb-1">${it.emoji||'❓'}</div>
-            <div class="font-bold text-[10px] text-gray-200 truncate">${it.name}</div>
-            <div class="${rarityColors[it.rarity]||'text-gray-500'} text-[8px] uppercase">${it.rarity}</div>
-            <div class="text-[10px] ${it.base>0?'text-green-400':'text-gray-500'}">+${it.base}</div>
-            <div class="text-[8px] text-gray-500 leading-tight mt-1">${it.desc||''}</div>
-          `;
-          list.appendChild(div);
-        }
-      }
-
-      function renderTabs() {
-        tabs.innerHTML = '';
-        for (const f of factions) {
-          const btn = document.createElement('button');
-          btn.className = `px-3 py-1.5 rounded-lg text-xs font-bold transition border ${f.key === activeFaction ? 'bg-gray-700 border-cyan-400 text-cyan-300' : 'bg-gray-800 border-gray-700 text-gray-400 hover:bg-gray-700'}`;
-          btn.textContent = f.label;
-          btn.onclick = () => { activeFaction = f.key; renderTabs(); renderDex(f.key); };
-          tabs.appendChild(btn);
-        }
-      }
-
-      renderTabs();
-      renderDex(activeFaction);
-    }
-
-    let toastTimeout;
-
-    function showToast(msg) {
-      const t = document.getElementById('toast');
-      t.textContent = msg;
-      t.classList.remove('hidden');
-      clearTimeout(toastTimeout);
-      toastTimeout = setTimeout(() => t.classList.add('hidden'), 3000);
-    }
-
-    // ============================================================
-    // INIT
-    // ============================================================
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('spinBtn').addEventListener('click', spin);
-      document.getElementById('inventoryBtn').addEventListener('click', showInventory);
-      document.getElementById('itemDexBtn').addEventListener('click', showItemDex);
-      document.getElementById('closeInventoryBtn').addEventListener('click', () => document.getElementById('inventoryOverlay').classList.add('hidden'));
-      document.getElementById('closeInventoryBtn2').addEventListener('click', () => document.getElementById('inventoryOverlay').classList.add('hidden'));
-      document.getElementById('closeDexBtn').addEventListener('click', () => document.getElementById('itemDexOverlay').classList.add('hidden'));
-      document.getElementById('closeDexBtn2').addEventListener('click', () => document.getElementById('itemDexOverlay').classList.add('hidden'));
-      document.getElementById('restartBtn').addEventListener('click', restartGame);
-      document.getElementById('continueBtn').addEventListener('click', continueGame);
-      document.getElementById('clearLogBtn').addEventListener('click', () => { g.comboLog = []; renderComboLog(); });
-
-      document.getElementById('gridCount').textContent = '0';
-      renderGrid();
-      renderDashboard();
-      log('🎮 Chào mừng đến Vòng Quay Nhân Phẩm!', 'combo');
-      log('📖 Nhấn SPIN để rút 1 thẻ từ kho vào lưới.', 'combo');
-      log(`🐱 Mỗi Stage có ${SPINS_PER_STAGE} lượt. Quota Stage 1: 50 điểm.`, 'combo');
-      log('💡 Ghép cặp item cạnh nhau để kích hoạt combo!', 'combo');
-    });
-  </script>
+    return;
+  }
+
+  // Edit: place/remove
+  if(grid[row][col]!==TILE.NORMAL)return;
+  if(cats.some(c=>c.x===col&&c.y===row))return;
+  if(goals.some(g=>g.x===col&&g.y===row))return;
+
+  const existing=items.findIndex(it=>it.x===col&&it.y===row&&!it.preplaced);
+  if(existing!==-1){
+    const removed=items[existing];
+    items.splice(existing,1);
+    currentEnergy+=ENERGY_COST[removed.type]||0;
+    messageDisplay.textContent='Removed '+removed.type+'. Energy refunded.';
+    updateUI();render();
+    return;
+  }
+
+  // Can't remove pre-placed items
+  const preplaced=items.find(it=>it.x===col&&it.y===row&&it.preplaced);
+  if(preplaced){messageDisplay.textContent='Cannot remove pre-placed item.';return;}
+
+  const cost=ENERGY_COST[selectedItemType];
+  if(currentEnergy<(cost||0)){flashEnergyWarning();return;}
+
+  const newItem={x:col,y:row,type:selectedItemType};
+  initItemDefaults(newItem);
+
+  currentEnergy-=cost;
+  items.push(newItem);
+  messageDisplay.textContent='Placed '+selectedItemType+' at ('+col+','+row+'). -'+cost+'⚡';
+  updateUI();render();
+});
+
+// Right-click remove
+canvas.addEventListener('contextmenu',(e)=>{
+  e.preventDefault();
+  if(gameMode!==GAME_MODE.EDIT)return;
+  const rect=canvas.getBoundingClientRect();
+  const col=Math.floor((e.clientX-rect.left)/CELL);
+  const row=Math.floor((e.clientY-rect.top)/CELL);
+  const cols=canvas.width/CELL,rows=canvas.height/CELL;
+  if(col<0||col>=cols||row<0||row>=rows)return;
+
+  const existing=items.findIndex(it=>it.x===col&&it.y===row&&!it.preplaced);
+  if(existing!==-1){
+    const removed=items[existing];
+    items.splice(existing,1);
+    currentEnergy+=ENERGY_COST[removed.type]||0;
+    messageDisplay.textContent='Removed '+removed.type+'. Energy refunded.';
+    updateUI();render();
+  }
+});
+
+// Keyboard
+document.addEventListener('keydown',(e)=>{
+  if(gameMode!==GAME_MODE.EDIT)return;
+  if(cats.length!==1)return; // Only for single-cat levels
+  const keyMap={ArrowUp:DIR.UP,ArrowDown:DIR.DOWN,ArrowLeft:DIR.LEFT,ArrowRight:DIR.RIGHT};
+  if(keyMap[e.key]){e.preventDefault();cats[0].direction=keyMap[e.key];render();}
+});
+
+// ============================================================
+//  BOOT
+// ============================================================
+loadLevel(0);
+</script>
 </body>
 </html>
