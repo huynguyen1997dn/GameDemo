@@ -406,6 +406,7 @@
   const btnNext        = document.getElementById('btnNext');
   const hintText       = document.getElementById('hintText');
   let   hintVisible    = false;
+  let   isFirstLoad    = true;
 
   // ============================================================
   //  RENDER
@@ -481,7 +482,12 @@
     hintText.textContent = '';
     buildLevelButtons();
     render();
-    showMessage(`Level ${levelNum}: hãy chọn ô có sỏi!`, 'info');
+    if (levelNum === 1 && isFirstLoad) {
+      showMessage('💪 Thử Level 10 xem :)))', 'info');
+      isFirstLoad = false;
+    } else {
+      showMessage(`Level ${levelNum}: hãy chọn ô có sỏi!`, 'info');
+    }
   }
 
   // ============================================================
