@@ -1,1251 +1,747 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cat Chaos — Final</title>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{
-  background:#1a1a2e;min-height:100vh;display:flex;
-  justify-content:center;align-items:center;
-  font-family:'Segoe UI',system-ui,sans-serif;
-}
-.game-container{
-  background:#16213e;padding:16px 24px;border-radius:16px;
-  box-shadow:0 8px 32px rgba(0,0,0,0.5);
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  position:relative;
-}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Sỏi Về Kho</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(145deg, #f7f3e9 0%, #efe6d5 100%);
+      min-height: 100dvh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 12px;
+    }
 
-/* ── HUD ── */
-.hud{
-  display:flex;justify-content:space-between;align-items:center;
-  width:100%;color:#eee;font-size:13px;gap:12px;flex-wrap:wrap;
-}
-.hud .name{color:#e94560;font-weight:700;font-size:14px;white-space:nowrap}
-.hud .stat{white-space:nowrap}
+    /* ===== CONTAINER ===== */
+    .container {
+      background: #fffaf2;
+      border-radius: 28px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      padding: 24px 20px 28px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+    }
 
-/* ── Canvas ── */
-canvas{
-  border:3px solid #0f3460;border-radius:8px;
-  background:#d3d3d3;display:block;cursor:pointer;
-}
+    /* ===== HEADER ===== */
+    .game-title {
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      font-weight: 800;
+      color: #4a3520;
+      letter-spacing: 2px;
+      margin-bottom: 4px;
+    }
+    .game-title span { color: #d4a045; }
 
-/* ── Item Selector ── */
-.item-selector{display:flex;flex-direction:column;gap:4px;width:100%}
-.item-row{display:flex;justify-content:center;gap:4px;flex-wrap:wrap}
-.btn-item{
-  padding:4px 10px;border:2px solid transparent;border-radius:6px;
-  background:#0f3460;color:#aaa;font-size:13px;
-  cursor:pointer;transition:all .12s;white-space:nowrap;
-}
-.btn-item:hover{background:#1a4a7a;color:#fff}
-.btn-item.active{border-color:#e94560;background:#1a4a7a;color:#fff}
+    /* ===== LEVEL BUTTONS ===== */
+    .level-bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 6px;
+      margin: 12px 0 14px;
+    }
+    .btn-level {
+      min-width: 44px;
+      height: 38px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      background: #e8ddd0;
+      color: #5a4030;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      padding: 0 10px;
+    }
+    .btn-level:hover { background: #dccabc; transform: translateY(-1px); }
+    .btn-level:active { transform: scale(0.95); }
+    .btn-level.active {
+      background: #d4a045;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(212,160,69,0.4);
+    }
 
-/* ── Energy ── */
-.energy-bar{display:flex;align-items:center;gap:8px;width:100%;color:#ccc;font-size:13px}
-.energy-label{font-weight:600;text-transform:uppercase;letter-spacing:1px;white-space:nowrap}
-.energy-text{color:#f5c842;font-weight:700;min-width:50px;text-align:center}
-.energy-track{flex:1;height:10px;background:#0f3460;border-radius:5px;overflow:hidden}
-.energy-fill{height:100%;background:linear-gradient(90deg,#e94560,#f5c842);border-radius:5px;transition:width .25s}
-.flash-warning{animation:flashRed .6s}
-@keyframes flashRed{0%,100%{color:#f5c842}50%{color:red;text-shadow:0 0 10px red}}
+    /* ===== INFO BAR ===== */
+    .info-bar {
+      display: flex;
+      justify-content: center;
+      gap: clamp(16px, 6vw, 40px);
+      background: #f2ebe1;
+      border-radius: 14px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      font-size: clamp(0.9rem, 2.8vw, 1.05rem);
+      font-weight: 600;
+      color: #4a3520;
+    }
+    .info-bar .label { font-weight: 400; color: #8a7a6a; }
+    .info-bar .value { color: #d4a045; }
 
-/* ── Info ── */
-.info-bar{display:flex;justify-content:space-between;width:100%;color:#eee;font-size:13px}
-.info-bar .mode{color:#e94560;font-weight:700}
-.info-bar .status{color:#f5c842;font-size:12px}
+    /* ===== BOARD ===== */
+    .board {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 14px;
+      position: relative;
+    }
 
-/* ── Controls ── */
-.controls{display:flex;gap:12px}
-.controls button{
-  padding:10px 32px;border:none;border-radius:8px;font-size:16px;
-  font-weight:700;cursor:pointer;transition:transform .12s,opacity .12s;letter-spacing:1px;
-}
-.controls button:active{transform:scale(.95)}
-.controls button:disabled{opacity:.4;cursor:not-allowed}
-.btn-go{background:#e94560;color:#fff}
-.btn-go:hover:not(:disabled){background:#ff6b81}
-.btn-reset{background:#533483;color:#fff}
-.btn-reset:hover:not(:disabled){background:#7548b8}
-.message{color:#f5c842;font-size:16px;font-weight:700;min-height:24px;text-align:center}
+    /* ---- Regular Cells ---- */
+    .cell {
+      width: 64px;
+      height: 72px;
+      background: #f5ede4;
+      border-radius: 14px;
+      box-shadow: inset 0 -3px 0 #dccabc, 0 2px 6px rgba(0,0,0,0.06);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.2s, opacity 0.2s;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+    }
+    .cell:hover:not(.disabled):not(.cell--receiving) {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+    .cell:active:not(.disabled) { transform: scale(0.95); }
 
-/* ── Win Overlay ── */
-.overlay{
-  display:none;position:fixed;inset:0;z-index:100;
-  background:rgba(0,0,0,.75);justify-content:center;align-items:center;
-}
-.overlay.show{display:flex}
-.popup{
-  background:#16213e;padding:40px 48px;border-radius:20px;
-  text-align:center;box-shadow:0 0 60px rgba(233,69,96,.4);
-  border:2px solid #e94560;
-}
-.popup h2{color:#f5c842;font-size:28px;margin-bottom:12px}
-.popup .stars{font-size:52px;margin:12px 0;letter-spacing:8px}
-.popup .detail{color:#aaa;font-size:16px;margin-bottom:20px}
-.popup button{
-  padding:14px 44px;border:none;border-radius:10px;
-  background:linear-gradient(135deg,#e94560,#f5c842);
-  color:#fff;font-size:18px;font-weight:700;
-  cursor:pointer;transition:transform .12s;
-}
-.popup button:hover{transform:scale(1.05)}
-.popup button:active{transform:scale(.95)}
+    .cell.disabled {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+    }
 
-/* ── Tooltip ── */
-#game-tooltip{
-  position:absolute;pointer-events:none;display:none;z-index:1000;
-  background:rgba(0,0,0,.88);color:#eee;padding:8px 12px;
-  border-radius:8px;font-size:12px;max-width:280px;
-  line-height:1.5;border:1px solid rgba(233,69,96,.3);
-  box-shadow:0 4px 12px rgba(0,0,0,.5);
-  font-family:'Segoe UI',system-ui,sans-serif;
-}
-#game-tooltip .tt-name{color:#e94560;font-weight:700;font-size:13px}
-#game-tooltip .tt-row{display:flex;justify-content:space-between;gap:8px}
-#game-tooltip .tt-label{color:#999;margin-right:4px}
-#game-tooltip .tt-like{color:#69db7c}
-#game-tooltip .tt-dislike{color:#ff6b6b}
-#game-tooltip .tt-desc{color:#ccc;font-style:italic;margin-top:2px}
-</style>
+    .cell .stone-count {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #4a3520;
+      line-height: 1;
+    }
+    .cell .stone-label {
+      font-size: 0.6rem;
+      color: #9a8a7a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Cell animations */
+    .cell--selected {
+      animation: cellPop 0.3s ease;
+    }
+    @keyframes cellPop {
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.15); background: #f5e3c0; }
+      100% { transform: scale(1); }
+    }
+
+    .cell--receiving {
+      animation: cellReceive 0.3s ease;
+    }
+    @keyframes cellReceive {
+      0%   { background: #f5ede4; }
+      40%  { background: #c8e6c9; transform: scale(1.08); }
+      100% { background: #f5ede4; }
+    }
+
+    /* ---- Kho Cell ---- */
+    .cell-kho {
+      width: 72px;
+      height: 80px;
+      background: linear-gradient(145deg, #fae8c8, #f5d9a0);
+      border-radius: 16px;
+      box-shadow: inset 0 -3px 0 #d4a045, 0 2px 8px rgba(212,160,69,0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      user-select: none;
+    }
+    .cell-kho .kho-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #8a6a3a;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .cell-kho .kho-icon {
+      font-size: 1.4rem;
+      line-height: 1;
+    }
+
+    /* "+1" floating text on Kho */
+    .plus-one {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #e53935;
+      animation: floatUp 0.8s ease forwards;
+      pointer-events: none;
+    }
+    @keyframes floatUp {
+      0%   { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-28px) scale(1.3); }
+    }
+
+    /* Kho glow when receiving */
+    .cell-kho--glow {
+      animation: khoGlow 0.3s ease;
+    }
+    @keyframes khoGlow {
+      0%   { box-shadow: 0 0 0 rgba(255,215,0,0); }
+      50%  { box-shadow: 0 0 18px rgba(255,215,0,0.6); }
+      100% { box-shadow: 0 0 0 rgba(255,215,0,0); }
+    }
+
+    /* ===== BOTTOM BAR ===== */
+    .bottom-bar {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin: 10px 0 14px;
+    }
+    .btn-restart {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 24px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: #4a3520;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-restart:hover { background: #5a4530; }
+    .btn-restart:active { transform: scale(0.96); }
+
+    /* ---- Locked level ---- */
+    .btn-level.locked {
+      opacity: 0.35;
+      cursor: default;
+      pointer-events: none;
+      background: #d5c8b8;
+    }
+
+    /* ---- Next level button ---- */
+    .btn-next {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 20px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      background: #d4a045;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .btn-next:hover { background: #c49035; }
+    .btn-next:active { transform: scale(0.96); }
+
+    /* ===== HINT ===== */
+    .hint-area {
+      margin: 6px 0 10px;
+      text-align: center;
+    }
+    .btn-hint {
+      border: none;
+      border-radius: 20px;
+      padding: 6px 18px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: #e8ddd0;
+      color: #6a5a4a;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-hint:hover { background: #dccabc; }
+    .btn-hint:active { transform: scale(0.96); }
+    .hint-text {
+      font-size: 0.75rem;
+      color: #8a7a6a;
+      margin-top: 4px;
+      min-height: 1.2em;
+      transition: opacity 0.3s;
+    }
+
+    /* ===== RULES ===== */
+    .rules {
+      background: #f2ebe1;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 10px;
+      font-size: 0.78rem;
+      color: #6a5a4a;
+      line-height: 1.5;
+    }
+    .rules strong { color: #4a3520; }
+
+    /* ===== MESSAGE ===== */
+    .message-area {
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1rem;
+      border-radius: 12px;
+      padding: 8px 12px;
+      transition: background 0.3s, color 0.3s;
+    }
+    .message-area.success { background: #c8e6c9; color: #2e7d32; }
+    .message-area.failure { background: #ffcdd2; color: #c62828; }
+    .message-area.info    { color: #5a4030; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 420px) {
+      .container { padding: 16px 12px 20px; }
+      .cell { width: 54px; height: 64px; }
+      .cell .stone-count { font-size: 1.3rem; }
+      .cell-kho { width: 62px; height: 72px; }
+      .level-bar { gap: 4px; }
+      .btn-level { min-width: 38px; height: 34px; font-size: 0.75rem; padding: 0 8px; }
+    }
+    @media (max-width: 360px) {
+      .cell { width: 46px; height: 56px; }
+      .cell-kho { width: 52px; height: 62px; }
+    }
+  </style>
 </head>
 <body>
+<div class="container" id="app">
+  <!-- Header -->
+  <div class="game-title">🏆 <span>SỎI</span> VỀ KHO</div>
 
-<div class="game-container">
-  <!-- HUD -->
-  <div class="hud">
-    <span class="name" id="hudName">Level 1: Orange Intro</span>
-    <span class="stat" id="hudTimer">⏱ 45s</span>
-    <span class="stat" id="hudEnergy">⚡ 5 / 5</span>
-    <span class="stat" id="hudRetry">🔄 0</span>
-  </div>
+  <!-- Level bar -->
+  <div class="level-bar" id="levelBar"></div>
 
-  <canvas id="gameCanvas"></canvas>
-
-  <div id="game-tooltip"></div>
-
-  <!-- Item Selector -->
-  <div class="item-selector">
-    <div class="item-row">
-      <button class="btn-item" data-item="fish">🐟 (2)</button>
-      <button class="btn-item" data-item="laser">🔴 (3)</button>
-      <button class="btn-item" data-item="box">📦 (2)</button>
-      <button class="btn-item" data-item="cucumber">🥒 (1)</button>
-      <button class="btn-item" data-item="vacuum">🤖 (4)</button>
-    </div>
-    <div class="item-row">
-      <button class="btn-item" data-item="yarn">🧶 (2)</button>
-      <button class="btn-item" data-item="bell">🔔 (1)</button>
-      <button class="btn-item" data-item="mirror">🪞 (2)</button>
-      <button class="btn-item" data-item="furniture">🪑 (2)</button>
-      <button class="btn-item" data-item="catDoor">🚪 (1)</button>
-    </div>
-  </div>
-
-  <!-- Energy -->
-  <div class="energy-bar">
-    <span class="energy-label">Energy:</span>
-    <span class="energy-text" id="energyDisplay">5 / 5</span>
-    <div class="energy-track"><div class="energy-fill" id="energyFill" style="width:100%"></div></div>
-  </div>
-
-  <!-- Info -->
+  <!-- Info bar -->
   <div class="info-bar">
-    <span class="mode" id="modeDisplay">EDIT MODE</span>
-    <span class="status" id="statusDisplay">Orange: Idle</span>
+    <div>⭐ Điểm: <span class="value" id="scoreDisplay">0</span> / <span id="targetDisplay">0</span></div>
+    <div>🎯 Lượt còn: <span class="value" id="turnsDisplay">0</span></div>
   </div>
 
-  <!-- Controls -->
-  <div class="controls">
-    <button class="btn-go" id="btnGo">GO</button>
-    <button class="btn-reset" id="btnReset">RESET</button>
+  <!-- Board -->
+  <div class="board" id="board"></div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <button class="btn-restart" id="btnRestart">🔄 Chơi lại</button>
+    <button class="btn-next" id="btnNext" style="display:none">➡️ Level tiếp</button>
   </div>
 
-  <div class="message" id="messageDisplay"></div>
-</div>
-
-<!-- Win Overlay -->
-<div class="overlay" id="winOverlay">
-  <div class="popup">
-    <h2>🎉 Level Complete! 🎉</h2>
-    <div class="stars" id="winStars">⭐⭐⭐</div>
-    <p class="detail" id="winDetail">Retries: 0</p>
-    <button id="btnNext">▶ Next Level</button>
+  <!-- Rules -->
+  <div class="rules">
+    <strong>Cách chơi:</strong> Chọn ô có sỏi → rải từng viên sang phải.
+    Nếu ô kế tiếp có sỏi → dây chuyền (rải tiếp).
+    Nếu ô kế tiếp trống (Bỏ qua kho) → ăn ô sau đó (cộng toàn bộ sỏi vào điểm).
+    Mỗi viên tự rơi vào <strong>Kho</strong> cũng được +1 điểm.
+    Đạt mục tiêu trước khi hết lượt là <strong>thắng</strong>.
   </div>
+
+  <!-- Hint -->
+  <div class="hint-area">
+    <button class="btn-hint" id="btnHint">💡 Gợi ý</button>
+    <div class="hint-text" id="hintText"></div>
+  </div>
+
+  <!-- Message -->
+  <div class="message-area" id="messageArea">Chọn level để bắt đầu!</div>
 </div>
 
 <script>
-// ============================================================
-//  CONSTANTS
-// ============================================================
-const CELL = 50;
-const VISION_RADIUS = 3;
-const TICK_MS = 80;
-const TICKS_PER_SEC = Math.round(1000 / TICK_MS);
+  // ============================================================
+  //  LEVEL CONFIG
+  // ============================================================
+  const LEVELS = [
+    null, // index 0 unused (1-based)
+    { cells: [1,0,0,3,1],   turns: 2, target: 5,  solution: [1,5] },
+    { cells: [0,2,4,1,1],   turns: 2, target: 7,  solution: [4,5] },
+    { cells: [2,2,3,2,1],   turns: 2, target: 9,  solution: [1,5] },
+    { cells: [3,1,4,4,0],   turns: 2, target: 10, solution: [2,5] },
+    { cells: [0,2,4,2,2,1], turns: 3, target: 10, solution: [2,6,1] },
+    { cells: [0,1,5,3,1,2,1], turns: 3, target: 12, solution: [5,6,7] },
+    { cells: [5,2,3,2,0,1], turns: 3, target: 13, solution: [3,6,6] },
+    { cells: [1,2,3,3,3,3], turns: 4, target: 15, solution: [5,3,2,6] },
+    { cells: [2,2,1,4,4,3,2], turns: 4, target: 18, solution: [7,7,6,7] },
+    { cells: [2,3,3,4,1,2,5], turns: 5, target: 20, solution: [3,2,5,6,7] },
+  ];
 
-const TILE = { NORMAL:0, WALL:1, GOAL:2, HOLE:3 };
+  // ============================================================
+  //  STATE
+  // ============================================================
+  const state = {
+    cells: [],         // số sỏi từng ô thường
+    score: 0,
+    targetScore: 0,
+    turnsLeft: 0,
+    selectedLevel: 1,
+    unlockedLevel: 1,  // level cao nhất đã mở khóa
+    justWon: false,    // true sau khi thắng (để hiện nút Next)
+    isAnimating: false,
+    isGameOver: false,
+  };
 
-const DIR = {
-  UP:'UP', DOWN:'DOWN', LEFT:'LEFT', RIGHT:'RIGHT',
-};
+  // ============================================================
+  //  DOM REFS
+  // ============================================================
+  const boardEl        = document.getElementById('board');
+  const levelBarEl     = document.getElementById('levelBar');
+  const scoreDisplay   = document.getElementById('scoreDisplay');
+  const targetDisplay  = document.getElementById('targetDisplay');
+  const turnsDisplay   = document.getElementById('turnsDisplay');
+  const messageArea    = document.getElementById('messageArea');
+  const btnNext        = document.getElementById('btnNext');
+  const hintText       = document.getElementById('hintText');
+  let   hintVisible    = false;
 
-const GAME_MODE = { EDIT:'EDIT', SIMULATION:'SIMULATION' };
-const CAT_STATE = {
-  IDLE:'Idle', WALK:'Walk', STOP:'Stop', DIE:'Die',
-  EAT:'Eat', HIDE:'Hide', YARN_STUN:'YarnStun',
-  SCARED:'Scared', PLAY:'Play', MIRROR_PAUSE:'MirrorPause',
-};
+  // ============================================================
+  //  RENDER
+  // ============================================================
+  function render(highlightIndex = -1, receivingIndexes = [], khoGlow = false) {
+    const cellCount = state.cells.length;
 
-const DX = {[DIR.UP]:0,[DIR.DOWN]:0,[DIR.LEFT]:-1,[DIR.RIGHT]:1};
-const DY = {[DIR.UP]:-1,[DIR.DOWN]:1,[DIR.LEFT]:0,[DIR.RIGHT]:0};
+    // --- Build board HTML ---
+    let html = '';
+    for (let i = 0; i < cellCount; i++) {
+      const count = state.cells[i];
+      const disabled = (count <= 0 || state.isGameOver || state.isAnimating);
+      let cls = 'cell';
+      if (disabled) cls += ' disabled';
+      if (i === highlightIndex) cls += ' cell--selected';
+      if (receivingIndexes.includes(i)) cls += ' cell--receiving';
 
-const TILE_COLORS = {
-  [TILE.NORMAL]:'#d3d3d3',[TILE.WALL]:'#696969',
-  [TILE.GOAL]:'#ffd700',[TILE.HOLE]:'#2c1810',
-};
-
-const CAT_COLORS = {
-  Orange:{body:'#ff8c00',stroke:'#cc6a00',size:.35},
-  Black:{body:'#333',stroke:'#222',size:.35},
-  Fat:{body:'#d4874a',stroke:'#a86838',size:.42},
-  Kitten:{body:'#aaa',stroke:'#888',size:.28},
-  Ninja:{body:'#2d2d2d',stroke:'#1a1a1a',size:.35},
-};
-
-const InteractionMatrix = {
-  Orange:{fish:80,laser:100,box:50,cucumber:-100,vacuum:-100,yarn:60,bell:30,mirror:40,furniture:false,catDoor:false},
-  Black:{fish:70,laser:20,box:100,cucumber:-50,vacuum:-30,yarn:40,bell:20,mirror:20,furniture:false,catDoor:false},
-  Fat:{fish:120,laser:10,box:0,cucumber:-80,vacuum:-120,yarn:10,bell:10,mirror:0,furniture:false,catDoor:false},
-  Kitten:{fish:0,laser:80,box:0,cucumber:-120,vacuum:-150,yarn:90,bell:50,mirror:50,furniture:false,catDoor:true},
-  Ninja:{fish:50,laser:50,box:50,cucumber:0,vacuum:0,yarn:30,bell:0,mirror:0,furniture:true,catDoor:false},
-};
-
-const ENERGY_COST = {
-  fish:2,laser:3,box:2,cucumber:1,vacuum:4,
-  yarn:2,bell:1,mirror:2,furniture:2,catDoor:1,
-};
-
-const ITEM_EMOJI = {
-  fish:'🐟',laser:'🔴',box:'📦',cucumber:'🥒',vacuum:'🤖',
-  yarn:'🧶',bell:'🔔',mirror:'🪞',furniture:'🪑',catDoor:'🚪',
-};
-
-const ITEM_NAMES = {
-  fish:'Fish',laser:'Laser Pointer',box:'Cardboard Box',
-  cucumber:'Cucumber',vacuum:'Robot Vacuum',yarn:'Yarn Ball',
-  bell:'Jingle Bell',mirror:'Mirror',furniture:'Cat Furniture',
-  catDoor:'Cat Door',
-};
-
-const ITEM_DESCRIPTIONS = {
-  fish:'Lure cats to move toward it. Cats will eat and pause briefly.',
-  laser:'Strongly attracts most cats. Can be toggled ON/OFF during simulation.',
-  box:'Cats hide inside, becoming a temporary obstacle for ~2s.',
-  cucumber:'Hidden until approached. Scares cats away when revealed.',
-  vacuum:'Scares nearby cats. Patrols left and right automatically.',
-  yarn:'Stuns cats for ~3s. Degrades and disappears after 3 uses.',
-  bell:'Mildly attracts cats within 2 tiles.',
-  mirror:'Cats pause to stare for ~1s. Reflects laser beams visually.',
-  furniture:'Blocks passage of all cats except Ninja.',
-  catDoor:'Blocks passage of all cats except Kitten.',
-};
-
-const CAT_NAMES = {
-  Orange:'Mèo Cam',Black:'Mèo Đen',Fat:'Mèo Béo',
-  Kitten:'Mèo Con',Ninja:'Mèo Ninja',
-};
-
-const STUN_DURATIONS = {
-  EAT:12,HIDE:24,YARN_STUN:36,SCARED:12,MIRROR_PAUSE:12,
-};
-
-const STATE_RING_COLORS = {
-  [CAT_STATE.EAT]:{color:'#ff69b4',dashed:true},
-  [CAT_STATE.HIDE]:{color:'#4a90d9',dashed:false},
-  [CAT_STATE.YARN_STUN]:{color:'#f5c842',dashed:false},
-  [CAT_STATE.SCARED]:{color:'#9b59b6',dashed:true},
-  [CAT_STATE.PLAY]:{color:'red',dashed:false},
-  [CAT_STATE.MIRROR_PAUSE]:{color:'#00ced1',dashed:false},
-  [CAT_STATE.STOP]:{color:'#fff',dashed:false},
-  [CAT_STATE.DIE]:{color:'red',dashed:false},
-};
-
-function getCatPreferences(catType){
-  const matrix=InteractionMatrix[catType];
-  if(!matrix)return{likes:[],dislikes:[]};
-  const likes=[],dislikes=[];
-  for(const [item,val] of Object.entries(matrix)){
-    if(typeof val!=='number')continue;
-    if(val>0)likes.push({item,priority:val});
-    else if(val<0)dislikes.push({item,priority:val});
-  }
-  likes.sort((a,b)=>b.priority-a.priority);
-  dislikes.sort((a,b)=>a.priority-b.priority);
-  return{likes,dislikes};
-}
-
-// ============================================================
-//  LEVEL DATA  (3 levels)
-// ============================================================
-// Tiles: 0=Normal 1=Wall 2=Goal 3=Hole
-// Cat spawns are defined in cats[] config (not in grid)
-const Levels = [
-  // ── Level 1: Orange Intro (6x6) ──
-  {
-    id:1,name:'Orange Intro',rows:6,cols:6,maxEnergy:5,timer:45,
-    grid:[
-      [0,0,0,0,0,0],
-      [0,0,0,0,0,2],
-      [0,0,0,0,0,0],
-      [0,0,0,0,0,0],
-      [0,0,0,0,0,0],
-      [0,0,0,0,0,0],
-    ],
-    cats:[{type:'Orange',spawnX:0,spawnY:5,direction:DIR.RIGHT}],
-    // Fish in the cat's path (same row). Goal at top-right.
-    preplacedItems:[{type:'fish',x:2,y:5}],
-  },
-
-  // ── Level 2: Mirror & Box (8x8) ──
-  {
-    id:2,name:'Mirror & Box',rows:8,cols:8,maxEnergy:7,timer:45,
-    grid:[
-      [0,0,0,0,0,0,0,2],
-      [1,1,0,0,0,0,0,0],
-      [0,0,0,1,1,0,0,0],
-      [0,0,0,1,0,0,0,0],
-      [0,0,0,0,0,1,0,0],
-      [0,0,0,0,1,0,0,0],
-      [0,0,0,0,0,0,1,1],
-      [2,0,0,0,0,0,0,0],
-    ],
-    cats:[
-      {type:'Orange',spawnX:0,spawnY:7,direction:DIR.RIGHT},
-      {type:'Black',spawnX:7,spawnY:0,direction:DIR.LEFT},
-    ],
-    preplacedItems:[
-      {type:'fish',x:3,y:0},
-      {type:'fish',x:4,y:6},
-      {type:'mirror',x:3,y:3},
-      {type:'box',x:4,y:4},
-    ],
-  },
-
-  // ── Level 3: Vacuum Panic (10x10) ──
-  {
-    id:3,name:'Vacuum Panic',rows:10,cols:10,maxEnergy:10,timer:45,
-    grid:[
-      [0,1,0,0,0,0,0,0,0,2],
-      [0,1,0,0,0,0,0,0,1,0],
-      [0,0,0,0,0,0,0,0,0,0],
-      [0,0,1,1,3,3,1,1,0,0],
-      [0,0,1,0,0,0,0,1,0,0],
-      [0,0,0,0,0,0,0,0,0,0],
-      [0,0,0,1,0,0,1,0,0,0],
-      [0,0,0,1,0,0,1,0,0,0],
-      [0,1,0,0,0,0,0,0,1,0],
-      [2,0,0,0,0,0,0,0,1,0],
-    ],
-    cats:[
-      {type:'Fat',spawnX:0,spawnY:9,direction:DIR.RIGHT},
-      {type:'Kitten',spawnX:9,spawnY:0,direction:DIR.LEFT},
-    ],
-    preplacedItems:[
-      {type:'fish',x:5,y:9},
-      {type:'fish',x:4,y:1},
-      {type:'catDoor',x:5,y:3},
-    ],
-  },
-];
-
-// ============================================================
-//  GAME STATE
-// ============================================================
-let grid=[], cats=[], goals=[], items=[];
-let gameMode=GAME_MODE.EDIT;
-let selectedItemType='fish';
-let currentEnergy=10, maxEnergy=10;
-let currentLevelIndex=0;
-let levelTimer=45, totalTicks=0;
-let retryCount=0;
-
-// DOM refs
-const canvas=document.getElementById('gameCanvas');
-const ctx=canvas.getContext('2d');
-const modeDisplay=document.getElementById('modeDisplay');
-const statusDisplay=document.getElementById('statusDisplay');
-const messageDisplay=document.getElementById('messageDisplay');
-const energyDisplay=document.getElementById('energyDisplay');
-const energyFill=document.getElementById('energyFill');
-const btnGo=document.getElementById('btnGo');
-const btnReset=document.getElementById('btnReset');
-const btnNext=document.getElementById('btnNext');
-const winOverlay=document.getElementById('winOverlay');
-const winStars=document.getElementById('winStars');
-const winDetail=document.getElementById('winDetail');
-const hudName=document.getElementById('hudName');
-const hudTimer=document.getElementById('hudTimer');
-const hudEnergy=document.getElementById('hudEnergy');
-const hudRetry=document.getElementById('hudRetry');
-const itemButtons=document.querySelectorAll('.btn-item');
-
-let simulationInterval=null;
-
-// ============================================================
-//  HELPERS
-// ============================================================
-function getItemPriority(catType,itemType){
-  const val=InteractionMatrix[catType]?.[itemType];
-  if(typeof val==='boolean')return null;
-  return val??0;
-}
-
-function isBlockingItem(catType,item){
-  if(item.type==='furniture')return !InteractionMatrix[catType]?.furniture;
-  if(item.type==='catDoor')return !InteractionMatrix[catType]?.catDoor;
-  if(item.type==='box'&&item.hidingCat)return true;
-  return false;
-}
-
-function getOppositeDirection(dir){
-  const m={[DIR.UP]:DIR.DOWN,[DIR.DOWN]:DIR.UP,[DIR.LEFT]:DIR.RIGHT,[DIR.RIGHT]:DIR.LEFT};
-  return m[dir]||DIR.RIGHT;
-}
-
-function canMoveTo(x,y,catType){
-  if(x<0||x>=canvas.width/CELL||y<0||y>=canvas.height/CELL)return false;
-  if(grid[y][x]===TILE.WALL||grid[y][x]===TILE.HOLE)return false;
-  const item=items.find(it=>it.x===x&&it.y===y);
-  if(item&&isBlockingItem(catType,item))return false;
-  // Other cats block
-  if(cats.some(c=>c.x===x&&c.y===y))return false;
-  return true;
-}
-
-function isWalkable(x,y,catType){
-  if(x<0||x>=canvas.width/CELL||y<0||y>=canvas.height/CELL)return false;
-  if(grid[y][x]===TILE.WALL)return false;
-  const item=items.find(it=>it.x===x&&it.y===y);
-  if(item&&isBlockingItem(catType,item))return false;
-  if(cats.some(c=>c.x===x&&c.y===y))return false;
-  return true;
-}
-
-function initItemDefaults(item){
-  if(item.type==='laser')item.on=true;
-  if(item.type==='box')item.hidingCat=false;
-  if(item.type==='cucumber')item.hidden=true;
-  if(item.type==='vacuum'){
-    item.dir=DIR.RIGHT;item.patrolMax=2;
-    item.tickCounter=0;item.startX=item.x;
-  }
-  if(item.type==='yarn')item.durability=3;
-}
-
-// ============================================================
-//  LEVEL MANAGER
-// ============================================================
-function loadLevel(index){
-  const lv=Levels[index];
-  currentLevelIndex=index;
-  stopSimulation();
-
-  // Canvas size
-  canvas.width=lv.cols*CELL;
-  canvas.height=lv.rows*CELL;
-
-  // Grid
-  grid=[];
-  for(let r=0;r<lv.rows;r++){
-    grid[r]=[];
-    for(let c=0;c<lv.cols;c++)grid[r][c]=lv.grid[r]?.[c]??TILE.NORMAL;
-  }
-
-  // Goals
-  goals=[];
-  for(let r=0;r<lv.rows;r++)
-    for(let c=0;c<lv.cols;c++)
-      if(grid[r][c]===TILE.GOAL)goals.push({x:c,y:r});
-
-  // Cats
-  cats=lv.cats.map(c=>({
-    x:c.spawnX,y:c.spawnY,spawnX:c.spawnX,spawnY:c.spawnY,
-    direction:c.direction||DIR.RIGHT,speed:1,
-    state:CAT_STATE.IDLE,type:c.type,stateTimer:0,
-  }));
-
-  // Items (pre-placed + flag)
-  items=lv.preplacedItems?JSON.parse(JSON.stringify(lv.preplacedItems)):[];
-  items.forEach(i=>{i.preplaced=true;initItemDefaults(i);});
-
-  // Energy
-  maxEnergy=lv.maxEnergy;
-  currentEnergy=lv.maxEnergy;
-
-  // Timer & retry
-  levelTimer=lv.timer;
-  totalTicks=0;
-  retryCount=0;
-
-  gameMode=GAME_MODE.EDIT;
-  messageDisplay.textContent='';
-  winOverlay.classList.remove('show');
-  updateUI();
-  render();
-}
-
-function reloadLevel(){
-  loadLevel(currentLevelIndex);
-}
-
-// ============================================================
-//  RESET / RETRY
-// ============================================================
-function resetGame(){
-  retryCount++;
-  stopSimulation();
-  gameMode=GAME_MODE.EDIT;
-
-  const lv=Levels[currentLevelIndex];
-
-  // Reset cats to spawn
-  cats.forEach((c,i)=>{
-    const cfg=lv.cats[i];
-    c.x=cfg.spawnX;c.y=cfg.spawnY;
-    c.direction=cfg.direction||DIR.RIGHT;
-    c.state=CAT_STATE.IDLE;c.stateTimer=0;
-  });
-
-  // Keep pre-placed items, remove player items
-  items=items.filter(i=>i.preplaced);
-
-  currentEnergy=lv.maxEnergy;
-  levelTimer=lv.timer;
-  totalTicks=0;
-
-  messageDisplay.textContent='';
-  winOverlay.classList.remove('show');
-  updateUI();
-  render();
-}
-
-// ============================================================
-//  ENERGY
-// ============================================================
-function flashEnergyWarning(){
-  energyDisplay.classList.add('flash-warning');
-  messageDisplay.textContent='⚠️ Not enough Energy!';
-  setTimeout(()=>energyDisplay.classList.remove('flash-warning'),600);
-}
-
-// ============================================================
-//  VISION (per cat)
-// ============================================================
-function scanVision(c){
-  const visible=[];
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-
-  for(const dir of[DIR.UP,DIR.DOWN,DIR.LEFT,DIR.RIGHT]){
-    for(let dist=1;dist<=VISION_RADIUS;dist++){
-      const nx=c.x+DX[dir]*dist,ny=c.y+DY[dir]*dist;
-      if(nx<0||nx>=cols||ny<0||ny>=rows)break;
-      if(grid[ny][nx]===TILE.WALL)break;
-
-      const item=items.find(it=>it.x===nx&&it.y===ny);
-      if(!item)continue;
-      if(isBlockingItem(c.type,item))break;
-      if(item.type==='cucumber'&&item.hidden)continue;
-      if(item.type==='laser'&&!item.on)continue;
-      if(item.type==='bell'&&dist>2)continue;
-
-      const priority=getItemPriority(c.type,item.type);
-      if(priority!==null&&priority!==0)
-        visible.push({item,direction:dir,distance:dist,priority});
+      html += `<div class="${cls}" data-index="${i}">`;
+      html += `<div class="stone-count">${count}</div>`;
+      html += `<div class="stone-label">sỏi</div>`;
+      html += `</div>`;
     }
-  }
-  return visible;
-}
 
-function makeDecision(c,visible){
-  if(!visible.length)return;
-  const threats=visible.filter(v=>v.priority<0);
-  const attractions=visible.filter(v=>v.priority>0);
+    // --- Kho ---
+    let khoCls = 'cell-kho';
+    if (khoGlow) khoCls += ' cell-kho--glow';
+    html += `<div class="${khoCls}" id="khoCell">`;
+    html += `<div class="kho-icon">🏺</div>`;
+    html += `<div class="kho-label">Kho</div>`;
+    html += `</div>`;
 
-  if(threats.length){
-    threats.sort((a,b)=>(a.priority-b.priority)||(a.distance-b.distance));
-    c.direction=getOppositeDirection(threats[0].direction);
-    return;
+    boardEl.innerHTML = html;
+
+    // Update info bar
+    scoreDisplay.textContent  = state.score;
+    targetDisplay.textContent = state.targetScore;
+    turnsDisplay.textContent  = state.turnsLeft;
+
+    // Attach click events to cells
+    document.querySelectorAll('.cell:not(.disabled)').forEach(el => {
+      el.addEventListener('click', () => {
+        const idx = parseInt(el.dataset.index, 10);
+        handleCellClick(idx);
+      });
+    });
+
+    // Update level button active state
+    document.querySelectorAll('.btn-level').forEach(btn => {
+      btn.classList.toggle('active', parseInt(btn.dataset.level, 10) === state.selectedLevel);
+    });
+
+    // Show/hide Next button
+    btnNext.style.display = (state.justWon && state.selectedLevel < LEVELS.length - 1) ? '' : 'none';
   }
 
-  if(attractions.length){
-    attractions.sort((a,b)=>(b.priority-a.priority)||(a.distance-b.distance));
-    const t=attractions[0];
-    const dx=t.item.x-c.x,dy=t.item.y-c.y;
-    c.direction=Math.abs(dx)>=Math.abs(dy)?(dx>0?DIR.RIGHT:DIR.LEFT):(dy>0?DIR.DOWN:DIR.UP);
-  }
-}
+  // ============================================================
+  //  INIT LEVEL
+  // ============================================================
+  function initLevel(levelNum) {
+    const lv = LEVELS[levelNum];
+    if (!lv) return;
 
-// ============================================================
-//  ITEM PROCESSORS (per cat)
-// ============================================================
-function processItemCollision(c,item){
-  if(item.type==='fish'){
-    const idx=items.indexOf(item);
-    if(idx!==-1)items.splice(idx,1);
-    c.state=CAT_STATE.EAT;c.stateTimer=STUN_DURATIONS.EAT;
-    messageDisplay.textContent='🐟 '+c.type+' is eating...';
-    return;
-  }
-  if(item.type==='box'){
-    item.hidingCat=true;
-    c.state=CAT_STATE.HIDE;c.stateTimer=STUN_DURATIONS.HIDE;
-    messageDisplay.textContent='📦 '+c.type+' hid in the box!';
-    return;
-  }
-  if(item.type==='yarn'){
-    item.durability=(item.durability??3)-1;
-    c.state=CAT_STATE.YARN_STUN;c.stateTimer=STUN_DURATIONS.YARN_STUN;
-    messageDisplay.textContent='🧶 '+c.type+' playing with yarn ('+item.durability+' left)';
-    if(item.durability<=0){const idx=items.indexOf(item);if(idx!==-1)items.splice(idx,1);}
-    return;
-  }
-  if(item.type==='mirror'){
-    c.state=CAT_STATE.MIRROR_PAUSE;c.stateTimer=STUN_DURATIONS.MIRROR_PAUSE;
-    messageDisplay.textContent='🪞 '+c.type+' stares at mirror...';
-    return;
-  }
-  if(item.type==='laser'&&item.on){
-    c.state=CAT_STATE.PLAY;
-    messageDisplay.textContent='🔴 '+c.type+' plays with laser!';
-    return;
-  }
-}
+    state.selectedLevel = levelNum;
+    state.cells         = [...lv.cells];
+    state.score         = 0;
+    state.targetScore   = lv.target;
+    state.turnsLeft     = lv.turns;
+    state.isAnimating   = false;
+    state.isGameOver    = false;
+    state.justWon       = false;
 
-// ============================================================
-//  CUCUMBER / VACUUM (per cat)
-// ============================================================
-function checkAdjacentCucumber(c){
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  for(const dir of[DIR.UP,DIR.DOWN,DIR.LEFT,DIR.RIGHT]){
-    const ax=c.x+DX[dir],ay=c.y+DY[dir];
-    if(ax<0||ax>=cols||ay<0||ay>=rows)continue;
-    const cuc=items.find(it=>it.x===ax&&it.y===ay&&it.type==='cucumber'&&it.hidden);
-    if(!cuc)continue;
-    cuc.hidden=false;
-    const bx=c.x-DX[dir],by=c.y-DY[dir];
-    if(isWalkable(bx,by,c.type)){c.x=bx;c.y=by;}
-    c.direction=getOppositeDirection(dir);
-    c.state=CAT_STATE.SCARED;c.stateTimer=STUN_DURATIONS.SCARED;
-    messageDisplay.textContent='🥒 '+c.type+' scared by cucumber!';
-    return true;
+    hintVisible = false;
+    hintText.textContent = '';
+    buildLevelButtons();
+    render();
+    showMessage(`Level ${levelNum}: hãy chọn ô có sỏi!`, 'info');
   }
-  return false;
-}
 
-function checkVacuumScare(c){
-  for(const item of items){
-    if(item.type!=='vacuum')continue;
-    if(Math.abs(c.x-item.x)+Math.abs(c.y-item.y)<=1&&c.state===CAT_STATE.WALK){
-      c.direction=getOppositeDirection(item.dir);
-      c.state=CAT_STATE.SCARED;c.stateTimer=STUN_DURATIONS.SCARED;
-      messageDisplay.textContent='🤖 '+c.type+' scared by vacuum!';
+  // ============================================================
+  //  SHOW MESSAGE
+  // ============================================================
+  function showMessage(text, type = 'info') {
+    messageArea.textContent = text;
+    messageArea.className = 'message-area ' + type;
+  }
+
+  // ============================================================
+  //  CHECK GAME END
+  // ============================================================
+  function checkGameEnd() {
+    // Win condition
+    if (state.score >= state.targetScore) {
+      state.isGameOver = true;
+      state.justWon = true;
+      if (state.selectedLevel < LEVELS.length - 1) {
+        state.unlockedLevel = Math.max(state.unlockedLevel, state.selectedLevel + 1);
+      }
+      buildLevelButtons();
+      render();
+      showMessage('🎉 Thắng rồi! Chúc mừng bạn!', 'success');
       return true;
     }
-  }
-  return false;
-}
 
-function updateVacuumPatrol(){
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  for(const item of items){
-    if(item.type!=='vacuum')continue;
-    if(item.startX===undefined)item.startX=item.x;
-    item.tickCounter=(item.tickCounter||0)+1;
-    if(item.tickCounter%3!==0)continue;
-    const nx=item.x+DX[item.dir],ny=item.y+DY[item.dir];
-    const distFromStart=Math.abs(nx-item.startX);
-    if(distFromStart>item.patrolMax||nx<0||nx>=cols||ny<0||ny>=rows||grid[ny][nx]===TILE.WALL)
-      item.dir=getOppositeDirection(item.dir);
-    else{item.x=nx;item.y=ny;}
-  }
-}
-
-// ============================================================
-//  PER-CAT PROCESSOR
-// ============================================================
-function processCatTick(c){
-  // State timers
-  if(c.state!==CAT_STATE.WALK){
-    if(c.state===CAT_STATE.PLAY||c.state===CAT_STATE.STOP)return true;
-    if(c.state===CAT_STATE.DIE)return true;
-    c.stateTimer--;
-    if(c.stateTimer<=0){
-      if(c.state===CAT_STATE.HIDE)
-        items.forEach(it=>{if(it.hidingCat)it.hidingCat=false;});
-      c.state=CAT_STATE.WALK;
+    // Loss: no turns left
+    if (state.turnsLeft <= 0) {
+      state.isGameOver = true;
+      render();
+      showMessage('😞 Hết lượt! Bạn thua. Hãy thử lại!', 'failure');
+      return true;
     }
+
+    // Loss: all cells empty
+    const allEmpty = state.cells.every(c => c <= 0);
+    if (allEmpty) {
+      state.isGameOver = true;
+      render();
+      showMessage('😞 Hết sỏi! Bạn thua. Hãy thử lại!', 'failure');
+      return true;
+    }
+
     return false;
   }
 
-  // Vacuum scare
-  if(checkVacuumScare(c))return true;
-
-  // Cucumber
-  if(checkAdjacentCucumber(c))return true;
-
-  // Vision + decision
-  makeDecision(c,scanVision(c));
-
-  // Movement
-  const nx=c.x+DX[c.direction]*c.speed,ny=c.y+DY[c.direction]*c.speed;
-
-  if(!canMoveTo(nx,ny,c.type)){
-    c.state=CAT_STATE.STOP;
-    if(nx>=0&&nx<canvas.width/CELL&&ny>=0&&ny<canvas.height/CELL&&grid[ny]?.[nx]===TILE.GOAL){
-      // Move onto goal even if it looks blocked (goal is walkable)
-      c.x=nx;c.y=ny;
-      c.state=CAT_STATE.WALK;
-      return true;
-    }
-    return true;
+  // ============================================================
+  //  POSITION HELPERS  (vòng tròn có Kho)
+  // ============================================================
+  function advancePos(pos) {
+    // Tiến 1 bước trong vòng tròn (0→1→...→N-1→ -1 (Kho) → 0→...)
+    if (pos === -1) return 0;
+    if (pos === state.cells.length - 1) return -1; // -1 = Kho
+    return pos + 1;
   }
 
-  // Goal check
-  if(grid[ny][nx]===TILE.GOAL&&canMoveTo(nx,ny,c.type)){
-    c.x=nx;c.y=ny;
-    return true;
+  function nextRegularCell(pos) {
+    // Ô thường kế tiếp (bỏ qua Kho)
+    if (pos === -1 || pos === state.cells.length - 1) return 0;
+    return pos + 1;
   }
 
-  // Execute move
-  c.x=nx;c.y=ny;
+  // ============================================================
+  //  START TURN  (dây chuyền + ăn)
+  // ============================================================
+  function startTurn(startIndex) {
+    state.isAnimating = true;
 
-  // Hole check
-  if(grid[c.y][c.x]===TILE.HOLE){
-    c.state=CAT_STATE.DIE;
-    return true;
-  }
+    let turnKhoScore = 0;
+    let turnCaptureScore = 0;
 
-  // Item collision
-  const item=items.find(it=>it.x===c.x&&it.y===c.y);
-  if(item)processItemCollision(c,item);
+    function endTurn() {
+      state.turnsLeft--;
 
-  return true;
-}
-
-// ============================================================
-//  WIN / LOSE
-// ============================================================
-function checkWin(){
-  // All fish eaten
-  if(items.some(i=>i.type==='fish'))return false;
-  // All cats at goals and alive
-  return cats.every(c=>goals.some(g=>g.x===c.x&&g.y===c.y)&&c.state!==CAT_STATE.DIE);
-}
-
-function winGame(){
-  stopSimulation();
-  gameMode=GAME_MODE.EDIT;
-  const stars=retryCount===0?3:(retryCount<3?2:1);
-  winStars.textContent='⭐'.repeat(stars)+'☆'.repeat(3-stars);
-  winDetail.textContent='Retries: '+retryCount;
-  winOverlay.classList.add('show');
-  if(currentLevelIndex>=Levels.length-1)
-    btnNext.textContent='🏁 All Complete!';
-  else
-    btnNext.textContent='▶ Next Level';
-  updateUI();
-}
-
-function loseGame(reason){
-  stopSimulation();
-  gameMode=GAME_MODE.EDIT;
-  messageDisplay.textContent='💀 '+reason;
-  updateUI();
-  render();
-}
-
-// ============================================================
-//  TICK  (Game Loop)
-// ============================================================
-function tick(){
-  if(gameMode!==GAME_MODE.SIMULATION)return;
-
-  // Timer
-  totalTicks++;
-  if(totalTicks%TICKS_PER_SEC===0){
-    levelTimer--;
-    if(levelTimer<=0){loseGame('Time expired!');return;}
-  }
-
-  // Vacuum patrol
-  updateVacuumPatrol();
-
-  // Process each cat
-  for(const c of cats){
-    // Lose if any cat died
-    if(c.state===CAT_STATE.DIE){loseGame(c.type+' fell into a hole!');return;}
-    processCatTick(c);
-  }
-
-  // Win check
-  if(checkWin()){winGame();return;}
-
-  updateUI();
-  render();
-}
-
-// ============================================================
-//  SIMULATION CONTROL
-// ============================================================
-function startSimulation(){
-  if(gameMode===GAME_MODE.SIMULATION)return;
-  gameMode=GAME_MODE.SIMULATION;
-  for(const c of cats)c.state=CAT_STATE.WALK;
-  messageDisplay.textContent='';
-  simulationInterval=setInterval(tick,TICK_MS);
-  updateUI();
-  render();
-}
-
-function stopSimulation(){
-  if(simulationInterval){clearInterval(simulationInterval);simulationInterval=null;}
-}
-
-// ============================================================
-//  RENDERING
-// ============================================================
-function drawGrid(){
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  for(let r=0;r<rows;r++){
-    for(let c=0;c<cols;c++){
-      const type=grid[r][c];
-      if(type===TILE.HOLE){
-        // Dark hole with pit effect
-        ctx.fillStyle='#1a0e0a';
-        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
-        ctx.strokeStyle='#3d2218';
-        ctx.lineWidth=2;
-        ctx.strokeRect(c*CELL+2,r*CELL+2,CELL-4,CELL-4);
-        // Inner shadow
-        ctx.strokeStyle='#0a0503';
-        ctx.lineWidth=1;
-        ctx.strokeRect(c*CELL+4,r*CELL+4,CELL-8,CELL-8);
-      }else{
-        ctx.fillStyle=TILE_COLORS[type]||TILE_COLORS[TILE.NORMAL];
-        ctx.fillRect(c*CELL,r*CELL,CELL,CELL);
+      if (turnKhoScore > 0 && turnCaptureScore > 0) {
+        showMessage(`Kho +${turnKhoScore}, Ăn +${turnCaptureScore}!`, 'info');
+      } else if (turnKhoScore > 0) {
+        showMessage(`Kho +${turnKhoScore}!`, 'info');
+      } else if (turnCaptureScore > 0) {
+        showMessage(`Ăn +${turnCaptureScore}!`, 'info');
+      } else {
+        showMessage('❌ Không có điểm.', 'info');
       }
-      ctx.strokeStyle='#999';
-      ctx.lineWidth=1;
-      ctx.strokeRect(c*CELL,r*CELL,CELL,CELL);
 
-      // Goal tile decoration
-      if(type===TILE.GOAL){
-        const cx=c*CELL+CELL/2,cy=r*CELL+CELL/2;
-        ctx.font='28px serif';
-        ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillText('🐟',cx,cy);
+      state.isAnimating = false;
+      const ended = checkGameEnd();
+      if (!ended) render();
+    }
+
+    function afterDistribution(lastPos) {
+      setTimeout(() => {
+        let nextCell = nextRegularCell(lastPos);
+
+        if (state.cells[nextCell] > 0) {
+          // Dây chuyền: lấy sỏi từ ô kế tiếp
+          let stones = state.cells[nextCell];
+          state.cells[nextCell] = 0;
+          showMessage(`🔁 Dây chuyền! Lấy sỏi từ ô ${nextCell + 1}...`, 'info');
+          render();
+          setTimeout(() => {
+            distribute(nextCell, stones, afterDistribution);
+          }, 400);
+        } else {
+          // Ô kế tiếp trống → kiểm tra ăn
+          let captureCell = nextRegularCell(nextCell);
+          if (state.cells[captureCell] > 0) {
+            let captured = state.cells[captureCell];
+            state.score += captured;
+            turnCaptureScore += captured;
+            state.cells[captureCell] = 0;
+
+            const cellEl = document.querySelector(`.cell[data-index="${captureCell}"]`);
+            if (cellEl) {
+              const plus = document.createElement('div');
+              plus.className = 'plus-one';
+              plus.textContent = `+${captured}`;
+              plus.style.color = '#e53935';
+              plus.style.fontSize = '1.2rem';
+              cellEl.appendChild(plus);
+              setTimeout(() => plus.remove(), 800);
+            }
+
+            showMessage(`🍽️ Ăn ô ${captureCell + 1}! +${captured} điểm!`, 'info');
+            render(-1, [], false);
+            setTimeout(endTurn, 700);
+          } else {
+            endTurn();
+          }
+        }
+      }, 300);
+    }
+
+    function distribute(cellIndex, stones, callback) {
+      state.cells[cellIndex] = 0;
+      render(cellIndex);
+
+      let remaining = stones;
+      let pos = cellIndex;
+
+      function dropNext() {
+        if (remaining <= 0) {
+          callback(pos);
+          return;
+        }
+
+        pos = advancePos(pos);
+
+        if (pos === -1) {
+          state.score++;
+          turnKhoScore++;
+
+          const khoEl = document.getElementById('khoCell');
+          if (khoEl) {
+            const plus = document.createElement('div');
+            plus.className = 'plus-one';
+            plus.textContent = '+1';
+            khoEl.appendChild(plus);
+            setTimeout(() => plus.remove(), 800);
+          }
+
+          render(-1, [], true);
+        } else {
+          state.cells[pos]++;
+          render(-1, [pos], false);
+        }
+
+        remaining--;
+        setTimeout(dropNext, 250);
       }
+
+      setTimeout(dropNext, 300);
     }
+
+    // Bắt đầu: lấy sỏi từ ô được chọn
+    let stones = state.cells[startIndex];
+    distribute(startIndex, stones, afterDistribution);
   }
-}
 
-function drawItems(){
-  for(const item of items){
-    const cx=item.x*CELL+CELL/2,cy=item.y*CELL+CELL/2;
+  // ============================================================
+  //  HANDLE CELL CLICK
+  // ============================================================
+  function handleCellClick(index) {
+    if (state.isGameOver) return;
+    if (state.isAnimating) return;
+    if (state.cells[index] <= 0) return;
 
-    if(item.type==='cucumber'&&item.hidden){
-      ctx.font='16px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.globalAlpha=.25;ctx.fillText('?',cx,cy);ctx.globalAlpha=1;
-      continue;
-    }
+    startTurn(index);
+  }
 
-    if(item.type==='laser'){
-      if(item.on){
-        ctx.save();
-        ctx.shadowColor='red';ctx.shadowBlur=14;
-        ctx.beginPath();ctx.moveTo(cx,cy-12);ctx.lineTo(cx+12,cy);
-        ctx.lineTo(cx,cy+12);ctx.lineTo(cx-12,cy);ctx.closePath();
-        ctx.fillStyle='red';ctx.fill();
-        ctx.shadowBlur=0;ctx.restore();
-        ctx.beginPath();ctx.arc(cx,cy,4,0,Math.PI*2);
-        ctx.fillStyle='#fff';ctx.fill();ctx.closePath();
-      }else{
-        ctx.beginPath();ctx.arc(cx,cy,10,0,Math.PI*2);
-        ctx.fillStyle='#555';ctx.fill();
-        ctx.strokeStyle='#777';ctx.lineWidth=2;ctx.stroke();ctx.closePath();
-        ctx.font='14px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-        ctx.fillStyle='#aaa';ctx.fillText('OFF',cx,cy);
+  // ============================================================
+  //  RESTART LEVEL
+  // ============================================================
+  function restartLevel() {
+    if (state.isAnimating) return;
+    initLevel(state.selectedLevel);
+  }
+
+  // ============================================================
+  //  BUILD LEVEL BUTTONS
+  // ============================================================
+  function buildLevelButtons() {
+    levelBarEl.innerHTML = '';
+    for (let i = 1; i < LEVELS.length; i++) {
+      const btn = document.createElement('button');
+      const locked = i > state.unlockedLevel;
+      btn.className = 'btn-level' + (locked ? ' locked' : '');
+      btn.dataset.level = i;
+      btn.textContent = locked ? `🔒 LV ${i}` : `LV ${i}`;
+      if (locked) {
+        btn.disabled = true;
+      } else {
+        btn.addEventListener('click', () => {
+          if (state.isAnimating) return;
+          initLevel(i);
+        });
       }
-      continue;
-    }
-
-    if(item.type==='vacuum'){
-      ctx.font='28px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText('🤖',cx,cy);
-      const ad=item.dir||DIR.RIGHT;
-      ctx.strokeStyle='rgba(255,255,255,.6)';ctx.lineWidth=2;
-      ctx.beginPath();ctx.moveTo(cx,cy);
-      ctx.lineTo(cx+DX[ad]*12,cy+DY[ad]*12);ctx.stroke();
-      continue;
-    }
-
-    const emoji=ITEM_EMOJI[item.type];
-    if(emoji){
-      ctx.font='26px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(emoji,cx,cy);
+      levelBarEl.appendChild(btn);
     }
   }
-}
 
-function drawLaserBeams(){
-  for(const item of items){
-    if(item.type!=='laser'||!item.on)continue;
-    let bx=item.x,by=item.y,curDir=DIR.RIGHT,reflected=false;
-    const cols=canvas.width/CELL,rows=canvas.height/CELL;
-    ctx.save();
-    ctx.strokeStyle='rgba(255,50,50,.45)';ctx.lineWidth=3;
-    ctx.shadowColor='red';ctx.shadowBlur=6;
-    ctx.beginPath();ctx.moveTo(item.x*CELL+CELL/2,item.y*CELL+CELL/2);
-
-    for(let s=0;s<10;s++){
-      const nx=bx+DX[curDir],ny=by+DY[curDir];
-      if(nx<0||nx>=cols||ny<0||ny>=rows)break;
-      if(grid[ny][nx]===TILE.WALL)break;
-      const mirror=items.find(it=>it.x===nx&&it.y===ny&&it.type==='mirror');
-      if(mirror&&!reflected){
-        ctx.lineTo(nx*CELL+CELL/2,ny*CELL+CELL/2);
-        bx=nx;by=ny;
-        curDir=curDir===DIR.RIGHT?DIR.DOWN:DIR.UP;
-        reflected=true;
-        ctx.lineTo(nx*CELL+CELL/2,ny*CELL+CELL/2);
-        continue;
-      }
-      bx=nx;by=ny;
-      ctx.lineTo(bx*CELL+CELL/2,by*CELL+CELL/2);
+  // ============================================================
+  //  GO TO NEXT LEVEL
+  // ============================================================
+  function goToNextLevel() {
+    const next = state.selectedLevel + 1;
+    if (next < LEVELS.length) {
+      initLevel(next);
     }
-    ctx.stroke();ctx.restore();
-  }
-}
-
-function drawCat(c){
-  const cc=CAT_COLORS[c.type]||CAT_COLORS.Orange;
-  const cx=c.x*CELL+CELL/2,cy=c.y*CELL+CELL/2;
-  const radius=CELL*cc.size;
-
-  // Body
-  ctx.beginPath();ctx.arc(cx,cy,radius,0,Math.PI*2);
-  ctx.fillStyle=cc.body;ctx.fill();
-  ctx.strokeStyle=cc.stroke;ctx.lineWidth=2;ctx.stroke();ctx.closePath();
-
-  // State ring
-  const ring=STATE_RING_COLORS[c.state];
-  if(ring){
-    ctx.beginPath();ctx.arc(cx,cy,radius+4,0,Math.PI*2);
-    ctx.strokeStyle=ring.color;ctx.lineWidth=3;
-    if(ring.dashed)ctx.setLineDash([4,4]);
-    ctx.stroke();ctx.setLineDash([]);ctx.closePath();
   }
 
-  // DIE = X eyes
-  if(c.state===CAT_STATE.DIE){
-    ctx.strokeStyle='#fff';ctx.lineWidth=3;
-    ctx.beginPath();ctx.moveTo(cx-8,cy-5);ctx.lineTo(cx-3,cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx-3,cy-5);ctx.lineTo(cx-8,cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx+3,cy-5);ctx.lineTo(cx+8,cy);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(cx+8,cy-5);ctx.lineTo(cx+3,cy);ctx.stroke();
-    return;
-  }
-
-  // Ninja headband
-  if(c.type==='Ninja'){
-    ctx.strokeStyle='#e94560';ctx.lineWidth=4;
-    ctx.beginPath();
-    ctx.moveTo(cx-radius-2,cy-radius*.6);
-    ctx.lineTo(cx+radius+2,cy-radius*.6);ctx.stroke();ctx.closePath();
-    const td=(c.x+c.y)%2===0?1:-1;
-    ctx.beginPath();
-    ctx.moveTo(cx+radius*.8,cy-radius*.6);
-    ctx.lineTo(cx+td*(radius+6)+td*4,cy-radius*1.4);ctx.stroke();ctx.closePath();
-  }
-
-  // Eyes
-  const eoX=(DX[c.direction]||0)*3,eoY=(DY[c.direction]||0)*3;
-  for(const side of[-1,1]){
-    const ex=cx+side*(radius*.4)+eoX,ey=cy-radius*.15+eoY;
-    ctx.beginPath();ctx.arc(ex,ey,radius*.17,0,Math.PI*2);
-    ctx.fillStyle='#fff';ctx.fill();ctx.closePath();
-    ctx.beginPath();
-    ctx.arc(ex+eoX*.3,ey+eoY*.3,radius*.09,0,Math.PI*2);
-    ctx.fillStyle='#000';ctx.fill();ctx.closePath();
-  }
-
-  // Ears
-  for(const side of[-1,1]){
-    ctx.beginPath();
-    ctx.moveTo(cx+side*(radius*.8),cy-radius*.7);
-    ctx.lineTo(cx+side*(radius*1.2),cy-radius*1.3);
-    ctx.lineTo(cx+side*(radius*.35),cy-radius*1.15);
-    ctx.closePath();ctx.fillStyle=cc.body;ctx.fill();
-    ctx.strokeStyle=cc.stroke;ctx.lineWidth=1.5;ctx.stroke();
-  }
-
-  // Whiskers
-  ctx.strokeStyle='#555';ctx.lineWidth=1;
-  for(const side of[-1,1])
-    for(let i=-1;i<=1;i++){
-      ctx.beginPath();
-      ctx.moveTo(cx+side*(radius*.55),cy+i*(radius*.17));
-      ctx.lineTo(cx+side*(radius*1.25),cy+i*(radius*.28));
-      ctx.stroke();
+  // ============================================================
+  //  EVENT BINDING
+  // ============================================================
+  // ============================================================
+  //  TOGGLE SOLUTION HINT
+  // ============================================================
+  function toggleHint() {
+    const lv = LEVELS[state.selectedLevel];
+    if (!lv || !lv.solution) return;
+    hintVisible = !hintVisible;
+    if (hintVisible) {
+      hintText.textContent = `Gợi ý: Click ô ${lv.solution.join(' → ')}`;
+    } else {
+      hintText.textContent = '';
     }
-}
-
-function render(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  drawGrid();
-  drawItems();
-  drawLaserBeams();
-  cats.forEach(drawCat);
-}
-
-// ============================================================
-//  UI UPDATES
-// ============================================================
-function updateUI(){
-  const lv=Levels[currentLevelIndex];
-  hudName.textContent='Level '+(currentLevelIndex+1)+': '+lv.name;
-  hudTimer.textContent='⏱ '+Math.max(0,levelTimer)+'s';
-  hudEnergy.textContent='⚡ '+currentEnergy+' / '+lv.maxEnergy;
-  hudRetry.textContent='🔄 '+retryCount;
-
-  modeDisplay.textContent=gameMode===GAME_MODE.EDIT?'EDIT MODE':'SIMULATION MODE';
-  const statuses=cats.map(c=>{
-    let s=c.type+': '+c.state;
-    if(c.stateTimer>0)s+=' ('+Math.ceil(c.stateTimer*TICK_MS)+'ms)';
-    return s;
-  }).join(' | ');
-  statusDisplay.textContent=statuses;
-
-  btnGo.disabled=gameMode===GAME_MODE.SIMULATION;
-
-  energyDisplay.textContent=currentEnergy+' / '+lv.maxEnergy;
-  energyFill.style.width=(currentEnergy/lv.maxEnergy*100)+'%';
-}
-
-// ============================================================
-//  TOOLTIP SYSTEM
-// ============================================================
-const tooltipEl=document.getElementById('game-tooltip');
-
-function positionTooltip(e){
-  const containerRect=document.querySelector('.game-container').getBoundingClientRect();
-  let x=e.clientX-containerRect.left+15,y=e.clientY-containerRect.top+15;
-  const tw=tooltipEl.offsetWidth,th=tooltipEl.offsetHeight;
-  const maxX=containerRect.width-tw-5,maxY=containerRect.height-th-5;
-  if(x>maxX)x=Math.max(5,e.clientX-containerRect.left-tw-10);
-  if(y>maxY)y=Math.max(5,containerRect.height-th-5);
-  tooltipEl.style.left=x+'px';
-  tooltipEl.style.top=y+'px';
-}
-
-function showTooltip(html,e){
-  tooltipEl.innerHTML=html;
-  tooltipEl.style.display='block';
-  positionTooltip(e);
-}
-
-function hideTooltip(){
-  tooltipEl.style.display='none';
-}
-
-function getItemStatusText(item){
-  const name=ITEM_NAMES[item.type]||item.type;
-  const emoji=ITEM_EMOJI[item.type]||'';
-  let status='';
-  if(item.type==='laser')status='Trạng thái: '+(item.on?'BẬT':'TẮT');
-  else if(item.type==='cucumber')status=item.hidden?'Đang ẩn':'Đã lộ diện!';
-  else if(item.type==='yarn')status='Độ bền: '+item.durability+'/3';
-  else if(item.type==='vacuum')status='Đang tuần tra tự động';
-  else if(item.type==='box')status=item.hidingCat?'Có mèo đang trốn bên trong':'Trống';
-  else if(item.type==='bell')status='Thu hút nhẹ trong 2 ô';
-  else if(item.type==='mirror')status='Phản chiếu tia laser';
-  else if(item.type==='furniture')status='Vật cản';
-  else if(item.type==='catDoor')status='Vật cản';
-  return{name,emoji,status};
-}
-
-// ============================================================
-//  EVENTS
-// ============================================================
-btnGo.addEventListener('click',startSimulation);
-btnReset.addEventListener('click',resetGame);
-
-btnNext.addEventListener('click',()=>{
-  winOverlay.classList.remove('show');
-  if(currentLevelIndex<Levels.length-1)loadLevel(currentLevelIndex+1);
-  else reloadLevel();
-});
-
-// Item selector
-itemButtons.forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    itemButtons.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedItemType=btn.dataset.item;
-    messageDisplay.textContent='Selected: '+selectedItemType+' (Cost: '+(ENERGY_COST[selectedItemType]||'?')+'⚡)';
-  });
-});
-if(itemButtons[0])itemButtons[0].classList.add('active');
-
-// Canvas click
-canvas.addEventListener('click',(e)=>{
-  const rect=canvas.getBoundingClientRect();
-  const col=Math.floor((e.clientX-rect.left)/CELL);
-  const row=Math.floor((e.clientY-rect.top)/CELL);
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  if(col<0||col>=cols||row<0||row>=rows)return;
-
-  // Simulation: toggle laser
-  if(gameMode===GAME_MODE.SIMULATION){
-    const item=items.find(it=>it.x===col&&it.y===row&&it.type==='laser');
-    if(item){item.on=!item.on;
-      messageDisplay.textContent='Laser '+(item.on?'🔴 ON':'⭕ OFF');
-      render();
-    }
-    return;
   }
 
-  // Edit: place/remove
-  if(grid[row][col]!==TILE.NORMAL)return;
-  if(cats.some(c=>c.x===col&&c.y===row))return;
-  if(goals.some(g=>g.x===col&&g.y===row))return;
+  // ============================================================
+  //  EVENT BINDING
+  // ============================================================
+  document.getElementById('btnRestart').addEventListener('click', restartLevel);
+  document.getElementById('btnNext').addEventListener('click', goToNextLevel);
+  document.getElementById('btnHint').addEventListener('click', toggleHint);
 
-  const existing=items.findIndex(it=>it.x===col&&it.y===row&&!it.preplaced);
-  if(existing!==-1){
-    const removed=items[existing];
-    items.splice(existing,1);
-    currentEnergy+=ENERGY_COST[removed.type]||0;
-    messageDisplay.textContent='Removed '+removed.type+'. Energy refunded.';
-    updateUI();render();
-    return;
-  }
-
-  // Can't remove pre-placed items
-  const preplaced=items.find(it=>it.x===col&&it.y===row&&it.preplaced);
-  if(preplaced){messageDisplay.textContent='Cannot remove pre-placed item.';return;}
-
-  const cost=ENERGY_COST[selectedItemType];
-  if(currentEnergy<(cost||0)){flashEnergyWarning();return;}
-
-  const newItem={x:col,y:row,type:selectedItemType};
-  initItemDefaults(newItem);
-
-  currentEnergy-=cost;
-  items.push(newItem);
-  messageDisplay.textContent='Placed '+selectedItemType+' at ('+col+','+row+'). -'+cost+'⚡';
-  updateUI();render();
-});
-
-// Right-click remove
-canvas.addEventListener('contextmenu',(e)=>{
-  e.preventDefault();
-  if(gameMode!==GAME_MODE.EDIT)return;
-  const rect=canvas.getBoundingClientRect();
-  const col=Math.floor((e.clientX-rect.left)/CELL);
-  const row=Math.floor((e.clientY-rect.top)/CELL);
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  if(col<0||col>=cols||row<0||row>=rows)return;
-
-  const existing=items.findIndex(it=>it.x===col&&it.y===row&&!it.preplaced);
-  if(existing!==-1){
-    const removed=items[existing];
-    items.splice(existing,1);
-    currentEnergy+=ENERGY_COST[removed.type]||0;
-    messageDisplay.textContent='Removed '+removed.type+'. Energy refunded.';
-    updateUI();render();
-  }
-});
-
-// Keyboard
-document.addEventListener('keydown',(e)=>{
-  if(gameMode!==GAME_MODE.EDIT)return;
-  if(cats.length!==1)return; // Only for single-cat levels
-  const keyMap={ArrowUp:DIR.UP,ArrowDown:DIR.DOWN,ArrowLeft:DIR.LEFT,ArrowRight:DIR.RIGHT};
-  if(keyMap[e.key]){e.preventDefault();cats[0].direction=keyMap[e.key];render();}
-});
-
-function handleCanvasHover(e){
-  if(gameMode!==GAME_MODE.SIMULATION&&gameMode!==GAME_MODE.EDIT){hideTooltip();return;}
-  const rect=canvas.getBoundingClientRect();
-  const col=Math.floor((e.clientX-rect.left)/CELL);
-  const row=Math.floor((e.clientY-rect.top)/CELL);
-  const cols=canvas.width/CELL,rows=canvas.height/CELL;
-  if(col<0||col>=cols||row<0||row>=rows){hideTooltip();return;}
-
-  // Check cat
-  const cat=cats.find(c=>c.x===col&&c.y===row);
-  if(cat){
-    const cname=CAT_NAMES[cat.type]||cat.type;
-    const emoji={Orange:'🧡',Black:'🖤',Fat:'🐱',Kitten:'🐈',Ninja:'🥷'}[cat.type]||'🐱';
-    const stateIcons={Idle:'💤',Walk:'🚶',Eat:'🍽️',Hide:'🙈',YarnStun:'🌀',Scared:'😱',Play:'🎯',MirrorPause:'🪞',Stop:'✋',Die:'💀'};
-    const prefs=getCatPreferences(cat.type);
-    let html='<div class="tt-name">'+emoji+' '+cname+' ('+cat.type+')</div>';
-    html+='<div>'+ (stateIcons[cat.state]||'')+' Trạng thái: '+cat.state+'</div>';
-    if(prefs.likes.length)html+='<div class="tt-like">❤️ Thích: '+prefs.likes.map(p=>ITEM_EMOJI[p.item]+' '+p.item).slice(0,3).join(', ')+'</div>';
-    if(prefs.dislikes.length)html+='<div class="tt-dislike">💔 Ghét: '+prefs.dislikes.map(p=>ITEM_EMOJI[p.item]+' '+p.item).slice(0,3).join(', ')+'</div>';
-    showTooltip(html,e);
-    return;
-  }
-
-  // Check item
-  const item=items.find(it=>it.x===col&&it.y===row);
-  if(item){
-    const {name,emoji,status}=getItemStatusText(item);
-    let html='<div class="tt-name">'+emoji+' '+name+'</div>';
-    if(status)html+='<div>'+status+'</div>';
-    if(item.preplaced)html+='<div class="tt-desc">Pre-placed</div>';
-    const desc=ITEM_DESCRIPTIONS[item.type];
-    if(desc)html+='<div class="tt-desc">'+desc+'</div>';
-    showTooltip(html,e);
-    return;
-  }
-
-  // Check goal
-  if(grid[row][col]===TILE.GOAL){
-    showTooltip('<div class="tt-name">🐟 Goal Tile</div><div>Đưa mèo đến đây để chiến thắng!</div>',e);
-    return;
-  }
-
-  hideTooltip();
-}
-
-canvas.addEventListener('mouseenter',handleCanvasHover);
-canvas.addEventListener('mousemove',handleCanvasHover);
-canvas.addEventListener('mouseleave',hideTooltip);
-
-// Item button tooltips
-itemButtons.forEach(btn=>{
-  const type=btn.dataset.item;
-  btn.addEventListener('mouseenter',(e)=>{
-    const name=ITEM_NAMES[type]||type;
-    const emoji=ITEM_EMOJI[type]||'';
-    const cost=ENERGY_COST[type]||0;
-    const desc=ITEM_DESCRIPTIONS[type]||'';
-    const html='<div class="tt-name">'+emoji+' '+name+'</div>'+
-      '<div class="tt-row"><span>⚡ Energy Cost: '+cost+'</span></div>'+
-      '<div class="tt-desc">'+desc+'</div>';
-    showTooltip(html,e);
-  });
-  btn.addEventListener('mouseleave',hideTooltip);
-  btn.addEventListener('mousemove',(e)=>{if(tooltipEl.style.display==='block')positionTooltip(e);});
-});
-
-// ============================================================
-//  BOOT
-// ============================================================
-loadLevel(0);
+  // ============================================================
+  //  INIT
+  // ============================================================
+  buildLevelButtons();
+  initLevel(1);
 </script>
 </body>
 </html>
