@@ -480,13 +480,29 @@ function updateHutProgress() {
   });
 }
 
+const RESOURCE_TIER = {
+  catnip:0, wood:0, science:0,
+  minerals:1, coal:1,
+  iron:2,
+  beam:3, slab:3
+};
+
+function isResourceUnlocked(id) {
+  switch (id) {
+    case 'minerals': case 'coal': return state.techs.mining;
+    case 'iron': return state.techs.metalworking;
+    case 'beam': case 'slab': return state.buildings.workshop > 0;
+    default: return true;
+  }
+}
+
 function renderResourceBar() {
   const container = document.getElementById('resources-scroll');
   const scrollLeft = container.scrollLeft;
   container.innerHTML = '';
-  const displayResources = ['catnip','wood','minerals','coal','iron','science'];
   const prod = getResourceProduction();
-  for (const id of displayResources) {
+  const order = Object.keys(RESOURCE_TIER).filter(isResourceUnlocked).sort((a,b) => RESOURCE_TIER[a] - RESOURCE_TIER[b]);
+  for (const id of order) {
     const r = state.resources[id];
     const cfg = R[id];
     const delta = id === 'catnip'
