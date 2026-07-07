@@ -18,7 +18,7 @@ const JOBS = {
   farmer:     { name:'Farmer',     icon:'🌾', unlockTech:null,      produces:'catnip',   desc:'Produces Catnip. Essential before winter.' },
   woodcutter: { name:'Woodcutter', icon:'🪓', unlockTech:null,      produces:'wood',     desc:'Chops trees for Wood.' },
   miner:      { name:'Miner',      icon:'⛏️', unlockTech:'mining',  produces:'minerals', desc:'Extracts Minerals. Small chance of Coal.' },
-  scholar:    { name:'Scholar',    icon:'📖', unlockTech:'writing', produces:'science',  desc:'Studies to produce Science.' }
+  scholar:    { name:'Scholar',    icon:'📖', unlockTech:null,      produces:'science',  desc:'Studies to produce Science.' }
 };
 
 const JOB_ORDER = ['farmer','woodcutter','miner','scholar'];
@@ -39,7 +39,7 @@ const B = {
     mapPositions:[[5,45],[14,52],[8,62],[22,55],[18,70],[30,50],[40,75],[55,55],[65,50],[70,65]]
   },
   barn:{
-    name:'Barn', icon:'🏚️', cost:{ wood:10, minerals:5 },
+    name:'Barn', icon:'🏚️', cost:{ wood:10 },
     effect:'+100 storage (catnip, wood, minerals)',
     desc:'Increases storage for basic resources.',
     unlockTech:'agriculture', color:'type-barn', maxCount:3,
@@ -60,14 +60,14 @@ const B = {
     mapPositions:[[5,30],[12,38]]
   },
   library:{
-    name:'Library', icon:'📚', cost:{ wood:30, minerals:20 },
+    name:'Library', icon:'📚', cost:{ wood:25 },
     effect:'Scholars produce Science',
     desc:'Scholars produce science with each library.',
-    unlockTech:'writing', color:'type-library', maxCount:2,
+    unlockTech:null, color:'type-library', maxCount:2,
     mapPositions:[[38,18],[52,18]]
   },
   smelter:{
-    name:'Smelter', icon:'🔥', cost:{ wood:25, minerals:15, iron:5 },
+    name:'Smelter', icon:'🔥', cost:{ wood:25, minerals:15 },
     effect:'Produces Iron from Minerals + Coal',
     desc:'Smelts Iron using Minerals and Coal.',
     unlockTech:'metalworking', color:'type-smelter', maxCount:2,
@@ -81,7 +81,7 @@ const TECHS = {
   calendar:{ name:'Calendar', cost:10, icon:'📅', unlocks:'Seasons cycle', desc:'Understanding the seasons.', prereq:null },
   agriculture:{ name:'Agriculture', cost:30, icon:'🌾', unlocks:'Barn', desc:'Farming techniques.', prereq:'calendar' },
   mining:{ name:'Mining', cost:120, icon:'⛏️', unlocks:'Miner, Mine, Workshop', desc:'Extract minerals.', prereq:'agriculture' },
-  writing:{ name:'Writing', cost:300, icon:'✍️', unlocks:'Library, Scholar', desc:'Record knowledge.', prereq:'mining' },
+  writing:{ name:'Writing', cost:300, icon:'✍️', unlocks:'Advanced research', desc:'Record knowledge for future research.', prereq:'mining' },
   metalworking:{ name:'Metalworking', cost:200, icon:'⚒️', unlocks:'Smelter, Iron', desc:'Smelt iron.', prereq:'mining' }
 };
 
@@ -102,13 +102,13 @@ function createState() {
     resources:{},
     buildings:{},
     jobs:{},
-    unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:false },
+    unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:true },
     techs:{},
     craftsUnlocked:false,
     season:0,
     seasonTick:0,
     seasonLength:45,
-    kittens:{ current:2, max:2 },
+    kittens:{ current:3, max:3 },
     happiness:100,
     tick:0,
     tutorial:{ step:0, active:true, completed:false },
@@ -123,12 +123,15 @@ function createState() {
   for (const id of R_ORDER) {
     let amt = 0;
     if (id === 'catnip') amt = 20;
-    else if (id === 'wood') amt = 8;
+    else if (id === 'wood') amt = 5;
     s.resources[id] = { amount: amt, cap: R[id].baseCap };
   }
   for (const id of B_ORDER) s.buildings[id] = 0;
   for (const id of JOB_ORDER) s.jobs[id] = 0;
   for (const id of T_ORDER) s.techs[id] = false;
+  s.buildings.field = 1;
+  s.jobs.farmer = 1;
+  s.jobs.woodcutter = 1;
   return s;
 }
 
@@ -184,7 +187,7 @@ function getResourceProduction() {
     if (Math.random() < 0.05) prod.coal += 0.5;
   }
 
-  prod.science = (state.kittens.current * 0.05) + (wc * 0.05) + (sc * (0.1 + lb * 0.1));
+  prod.science = (state.kittens.current * 0.02) + (state.jobs.farmer * 0.01) + (wc * 0.01) + (sc * (0.035 + lb * 0.035));
 
   if (sm > 0) {
     const ironRate = sm * 0.1;
@@ -670,9 +673,6 @@ function applyTechEffects(tId) {
     case 'mining':
       state.unlockedJobs.miner = true;
       break;
-    case 'writing':
-      state.unlockedJobs.scholar = true;
-      break;
     case 'calendar':
       state.seasonTick = 0;
       state.season = 0;
@@ -753,12 +753,13 @@ let lastShownStep = -1;
 function checkTutorial() {
   if (!state.tutorial.active || state.tutorial.completed) return;
   const steps = [
-    { text:'Welcome to Meow Hamlet! Let\'s build our first Catnip Field so the kittens have food. Go to the <b>Build</b> tab.', tab:'build', check:() => state.buildings.field >= 1 },
-    { text:'Great! Now go to the <b>Village</b> tab and assign 1 kitten as a Farmer to harvest the catnip.', tab:'village', check:() => state.jobs.farmer >= 1 },
-    { text:'We need more space! Build a <b>Hut</b> to house another kitten.', tab:'build', check:() => state.buildings.hut >= 1 },
-    { text:'We need Wood for building! Go to the <b>Village</b> tab and assign a <b>Woodcutter</b>. Wait until you have <b>10 Wood</b>.', tab:'village', check:() => state.resources.wood.amount >= 10 },
-    { text:'Excellent! Now go to the <b>Research</b> tab and discover the <b>Calendar</b> to track seasons.', tab:'research', check:() => state.techs.calendar },
-    { text:'Winter is coming! Make sure you have enough Catnip stored. Keep building fields and assigning farmers. Your village will thrive! 🐱', tab:'village', check:() => false }
+    { text:'', tab:null, check:() => true, auto:true },
+    { text:'', tab:null, check:() => true, auto:true },
+    { text:'We need more space! Build a <b>Hut</b> (5 Wood) to house more kittens.', tab:'build', check:() => state.buildings.hut >= 1 },
+    { text:'Now build a <b>Library</b> (25 Wood) so you can assign a Scholar and start researching!', tab:'build', check:() => state.buildings.library >= 1 },
+    { text:'Assign a <b>Scholar</b> in the Village tab to produce Science for research.', tab:'village', check:() => state.jobs.scholar >= 1 },
+    { text:'Go to the <b>Research</b> tab and discover the <b>Calendar</b> to track seasons!', tab:'research', check:() => state.techs.calendar },
+    { text:'Winter is coming! Make sure you have enough Catnip stored. Keep building and expanding! 🐱', tab:'village', check:() => false }
   ];
 
   const step = state.tutorial.step;
@@ -770,7 +771,7 @@ function checkTutorial() {
   }
 
   const s = steps[step];
-  if (s.check()) {
+  if (s.auto || s.check()) {
     state.tutorial.step++;
     lastShownStep = -1;
     checkTutorial();
