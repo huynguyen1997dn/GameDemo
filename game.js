@@ -378,7 +378,7 @@ function createState() {
         resources:{},
         buildings:{},
         jobs:{},
-        unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:true, priest:false, engineer:false },
+        unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:false, priest:false, engineer:false },
         techs:{},
         upgrades:{},
         craftsUnlocked:false,
