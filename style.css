@@ -138,6 +138,49 @@ html, body {
 
 .res-item.at-cap { border-color: #f0c040; background: #fffdf0; }
 
+/* ===== SEASON BAR ===== */
+#season-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(80,160,80,0.06);
+  font-size: 11px;
+  z-index: 10;
+  border-bottom: 1px solid rgba(80,160,80,0.08);
+}
+#season-bar.hidden { display: none; }
+
+#season-icon { font-size: 14px; }
+#season-name { font-weight: 700; color: #5a4a3a; font-size: 11px; }
+#season-effect { color: #6a8a6a; font-weight: 600; font-size: 10px; flex-shrink: 0; }
+
+.season-track {
+  flex: 1;
+  height: 5px;
+  background: rgba(80,160,80,0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 30px;
+}
+.season-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  background: #8bc88a;
+  transition: width 0.3s ease;
+}
+
+#season-progress {
+  font-size: 10px;
+  color: #a08070;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
 /* ===== MAP AREA ===== */
 #map-area {
   flex: 1;

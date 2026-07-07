@@ -92,17 +92,21 @@ const CRAFTS = {
   slab:{ name:'Slab', icon:'▣', inputs:{ minerals:250 }, output:'slab', outputQty:1, desc:'250 Minerals' }
 };
 
-const TRADE_RATIO = { catnip:10, wood:1 };
+function getTradeCost() {
+  return Math.ceil(10 * Math.pow(1.12, state.tradeCount));
+}
 
 function doTrade() {
-  if (state.resources.catnip.amount < TRADE_RATIO.catnip) return;
+  const cost = getTradeCost();
+  if (state.resources.catnip.amount < cost) return;
   if (state.resources.wood.amount >= state.resources.wood.cap) {
     notify('🪵 Wood storage is full!', 'warning');
     return;
   }
-  state.resources.catnip.amount -= TRADE_RATIO.catnip;
-  state.resources.wood.amount += TRADE_RATIO.wood;
-  notify('🪵 Traded 10 Catnip for 1 Wood!', 'success');
+  state.resources.catnip.amount -= cost;
+  state.resources.wood.amount++;
+  state.tradeCount++;
+  notify(`🪵 Traded ${cost} Catnip for 1 Wood!`, 'success');
   updateUI();
 }
 
@@ -128,6 +132,7 @@ function createState() {
     tutorial:{ step:0, active:true, completed:false },
     totalCatnipHarvested:0,
     totalTaps:0,
+    tradeCount:0,
     hutProgress:[],
     starvingTicks:0,
     catnipLowWarned:false,
@@ -401,9 +406,37 @@ function updateCats() {
 // ============================
 let prevAmounts = {};
 
+function renderSeasonInfo() {
+  const bar = document.getElementById('season-bar');
+  if (!state.techs.calendar || state.tick < 1) {
+    bar.classList.add('hidden');
+    return;
+  }
+  if (state.starvingTicks > 0 && state.kittens.current > 0) {
+    bar.classList.add('hidden');
+    return;
+  }
+  bar.classList.remove('hidden');
+
+  const icons = ['🌸','☀️','🍂','❄️'];
+  const names = ['Spring','Summer','Autumn','Winter'];
+  const effects = ['Catnip ×1.5','Catnip ×1.0','Catnip ×1.0','Catnip ×0.25'];
+
+  document.getElementById('season-icon').textContent = icons[state.season];
+  document.getElementById('season-name').textContent = names[state.season];
+  document.getElementById('season-effect').textContent = effects[state.season];
+
+  const pct = (state.seasonTick / state.seasonLength) * 100;
+  document.getElementById('season-fill').style.width = Math.min(pct, 100) + '%';
+
+  const remaining = state.seasonLength - state.seasonTick;
+  document.getElementById('season-progress').textContent = `${remaining}s`;
+}
+
 function updateUI() {
   renderResourceBar();
   renderStarvationBar();
+  renderSeasonInfo();
   updateHutProgress();
   const activeTab = document.querySelector('.tab-panel.active');
   if (activeTab) {
@@ -512,17 +545,18 @@ function renderVillageTab(panel) {
         <p class="gathering-hint">Arriving in ~${remaining}s</p>
       </div>`;
     } else {
+      const tradeCost = getTradeCost();
       html += `<div class="gathering-section">
         <p>👆 Tap the map above to gather Catnip!</p>
-        <button class="trade-btn" ${state.resources.catnip.amount >= 10 && state.resources.wood.amount < state.resources.wood.cap ? '' : 'disabled'}>
-          🔄 Trade 10 🌿 → 1 🪵
+        <button class="trade-btn" ${state.resources.catnip.amount >= tradeCost && state.resources.wood.amount < state.resources.wood.cap ? '' : 'disabled'}>
+          🔄 Trade ${tradeCost} 🌿 → 1 🪵
         </button>`;
 
       if (state.resources.wood.amount > 0 && !hasHut) {
         html += `<p class="gathering-hint">🏗️ Go to the <b>Build</b> tab to build a Hut!</p>`;
       }
-      if (state.resources.catnip.amount < 10) {
-        html += `<p class="gathering-hint">Need 10 Catnip to trade for Wood</p>`;
+      if (state.resources.catnip.amount < tradeCost) {
+        html += `<p class="gathering-hint">Need ${tradeCost} Catnip to trade for Wood</p>`;
       }
       if (state.resources.wood.amount >= state.resources.wood.cap) {
         html += `<p class="gathering-hint">🪵 Wood storage full! Build a Hut first.</p>`;
@@ -547,9 +581,10 @@ function renderVillageTab(panel) {
     <div class="village-stat ${netCatnip < 0 ? 'warning' : ''}">🌿 <span class="stat-label">Catnip/s</span> ${prod.catnip.toFixed(2)} - ${consume.toFixed(2)} = ${netCatnip.toFixed(2)}</div>
   </div>`;
 
-  const canTrade = state.resources.catnip.amount >= 10 && state.resources.wood.amount < state.resources.wood.cap;
+  const tradeCost = getTradeCost();
+  const canTrade = state.resources.catnip.amount >= tradeCost && state.resources.wood.amount < state.resources.wood.cap;
   html += `<div class="trade-row">
-    <button class="trade-btn" ${canTrade ? '' : 'disabled'}>🔄 Trade 10 🌿 → 1 🪵</button>
+    <button class="trade-btn" ${canTrade ? '' : 'disabled'}>🔄 Trade ${tradeCost} 🌿 → 1 🪵</button>
   </div>`;
 
   for (const jId of JOB_ORDER) {
