@@ -117,7 +117,6 @@ function createState() {
     starvingTicks:0,
     catnipLowWarned:false,
     winterWarned:false,
-    lastTap:0,
     gameOver:false
   };
   for (const id of R_ORDER) {
@@ -831,11 +830,7 @@ function initEvents() {
     });
   });
 
-  document.getElementById('map-area').addEventListener('click', (e) => {
-    const now = Date.now();
-    if (now - state.lastTap < 400) return;
-    state.lastTap = now;
-
+  function handleTap(e, clientX, clientY) {
     let bonus = 1;
     state.resources.catnip.amount = Math.min(
       state.resources.catnip.amount + bonus,
@@ -847,13 +842,22 @@ function initEvents() {
     el.className = 'tap-fx';
     el.textContent = `+${bonus} 🌿`;
     const rect = document.getElementById('map-container').getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 100;
-    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    const x = ((clientX - rect.left) / rect.width) * 100;
+    const y = ((clientY - rect.top) / rect.height) * 100;
     el.style.left = x + '%';
     el.style.top = y + '%';
     fx.appendChild(el);
     setTimeout(() => el.remove(), 800);
+  }
+
+  document.getElementById('map-area').addEventListener('click', (e) => {
+    handleTap(e, e.clientX, e.clientY);
   });
+
+  document.getElementById('map-area').addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    handleTap(e, e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: false });
 
   document.getElementById('resources-scroll').addEventListener('mouseover', (e) => {
     const item = e.target.closest('.res-item');
