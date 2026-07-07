@@ -92,6 +92,20 @@ const CRAFTS = {
   slab:{ name:'Slab', icon:'▣', inputs:{ minerals:250 }, output:'slab', outputQty:1, desc:'250 Minerals' }
 };
 
+const TRADE_RATIO = { catnip:10, wood:1 };
+
+function doTrade() {
+  if (state.resources.catnip.amount < TRADE_RATIO.catnip) return;
+  if (state.resources.wood.amount >= state.resources.wood.cap) {
+    notify('🪵 Wood storage is full!', 'warning');
+    return;
+  }
+  state.resources.catnip.amount -= TRADE_RATIO.catnip;
+  state.resources.wood.amount += TRADE_RATIO.wood;
+  notify('🪵 Traded 10 Catnip for 1 Wood!', 'success');
+  updateUI();
+}
+
 // ============================
 // STATE
 // ============================
@@ -108,11 +122,12 @@ function createState() {
     season:0,
     seasonTick:0,
     seasonLength:45,
-    kittens:{ current:3, max:3 },
+    kittens:{ current:0, max:0 },
     happiness:100,
     tick:0,
     tutorial:{ step:0, active:true, completed:false },
     totalCatnipHarvested:0,
+    totalTaps:0,
     hutProgress:[],
     starvingTicks:0,
     catnipLowWarned:false,
@@ -120,17 +135,11 @@ function createState() {
     gameOver:false
   };
   for (const id of R_ORDER) {
-    let amt = 0;
-    if (id === 'catnip') amt = 20;
-    else if (id === 'wood') amt = 5;
-    s.resources[id] = { amount: amt, cap: R[id].baseCap };
+    s.resources[id] = { amount: 0, cap: R[id].baseCap };
   }
   for (const id of B_ORDER) s.buildings[id] = 0;
   for (const id of JOB_ORDER) s.jobs[id] = 0;
   for (const id of T_ORDER) s.techs[id] = false;
-  s.buildings.field = 1;
-  s.jobs.farmer = 1;
-  s.jobs.woodcutter = 1;
   return s;
 }
 
@@ -171,7 +180,7 @@ function getResourceProduction() {
   const lb = state.buildings.library;
   const sm = state.buildings.smelter;
 
-  let cp = state.jobs.farmer * (0.5 + f * 0.5);
+  let cp = state.jobs.farmer * (1.0 + f * 0.5);
   const seasonMul = [1.5, 1.0, 1.0, 0.25][state.season];
   cp *= seasonMul;
   cp *= (state.happiness / 100);
@@ -233,7 +242,12 @@ function tick() {
       state.hutProgress[i]--;
       if (state.hutProgress[i] === 0 && state.kittens.current < state.kittens.max) {
         state.kittens.current++;
-        notify('🐱 A new kitten has arrived!', 'success');
+        if (state.kittens.current === 1) {
+          state.jobs.farmer = 1;
+          notify('🐱 Your first kitten has arrived and is now a Farmer!', 'success');
+        } else {
+          notify('🐱 A new kitten has arrived!', 'success');
+        }
       }
     }
   }
@@ -350,9 +364,14 @@ function updateCats() {
   while (catEls.length < target) {
     const el = document.createElement('div');
     el.className = 'cat-sprite';
+    const sx = 5 + Math.random() * 85;
+    const sy = 5 + Math.random() * 80;
     el.textContent = '🐱';
-    el.style.left = Math.random() * 80 + 10 + '%';
-    el.style.top = Math.random() * 80 + 10 + '%';
+    el.style.left = sx + '%';
+    el.style.top = sy + '%';
+    el.dataset.tx = sx;
+    el.dataset.ty = sy;
+    el.dataset.pause = '0';
     layer.appendChild(el);
     catEls.push(el);
   }
@@ -361,11 +380,19 @@ function updateCats() {
     el.remove();
   }
   for (const el of catEls) {
-    const nx = 5 + Math.random() * 85;
-    const ny = 5 + Math.random() * 80;
-    el.style.left = nx + '%';
-    el.style.top = ny + '%';
-    el.style.transitionDuration = (1.5 + Math.random() * 2) + 's';
+    let pause = parseInt(el.dataset.pause) || 0;
+    if (pause <= 0) {
+      const nx = 5 + Math.random() * 85;
+      const ny = 5 + Math.random() * 80;
+      el.dataset.tx = nx;
+      el.dataset.ty = ny;
+      el.style.left = nx + '%';
+      el.style.top = ny + '%';
+      el.style.transitionDuration = (2 + Math.random() * 2) + 's';
+      el.dataset.pause = (2 + Math.floor(Math.random() * 3)) + '';
+    } else {
+      el.dataset.pause = (pause - 1) + '';
+    }
   }
 }
 
@@ -468,6 +495,48 @@ function renderTab(tabId) {
 
 function renderVillageTab(panel) {
   const k = state.kittens;
+
+  if (k.current <= 0) {
+    const hasHut = state.buildings.hut > 0;
+
+    let html = `<div class="village-header">
+      <div class="village-stat">🌿 <span class="stat-label">Catnip</span> ${fmt(state.resources.catnip.amount)} / ${fmt(state.resources.catnip.cap)}</div>
+      <div class="village-stat">🪵 <span class="stat-label">Wood</span> ${fmt(state.resources.wood.amount)} / ${fmt(state.resources.wood.cap)}</div>
+    </div>`;
+
+    if (hasHut && k.current === 0) {
+      const remaining = state.hutProgress[0] || 0;
+      html += `<div class="gathering-wait">
+        <p>🐱 <b>A kitten is on its way...</b></p>
+        <div class="wait-track"><div class="wait-fill" style="width:${((5 - remaining) / 5) * 100}%"></div></div>
+        <p class="gathering-hint">Arriving in ~${remaining}s</p>
+      </div>`;
+    } else {
+      html += `<div class="gathering-section">
+        <p>👆 Tap the map above to gather Catnip!</p>
+        <button class="trade-btn" ${state.resources.catnip.amount >= 10 && state.resources.wood.amount < state.resources.wood.cap ? '' : 'disabled'}>
+          🔄 Trade 10 🌿 → 1 🪵
+        </button>`;
+
+      if (state.resources.wood.amount > 0 && !hasHut) {
+        html += `<p class="gathering-hint">🏗️ Go to the <b>Build</b> tab to build a Hut!</p>`;
+      }
+      if (state.resources.catnip.amount < 10) {
+        html += `<p class="gathering-hint">Need 10 Catnip to trade for Wood</p>`;
+      }
+      if (state.resources.wood.amount >= state.resources.wood.cap) {
+        html += `<p class="gathering-hint">🪵 Wood storage full! Build a Hut first.</p>`;
+      }
+      html += `</div>`;
+    }
+
+    panel.innerHTML = html;
+
+    const tradeBtn = panel.querySelector('.trade-btn:not([disabled])');
+    if (tradeBtn) tradeBtn.addEventListener('click', doTrade);
+    return;
+  }
+
   const prod = getResourceProduction();
   const consume = getCatnipConsumption();
   const netCatnip = prod.catnip - consume;
@@ -476,6 +545,11 @@ function renderVillageTab(panel) {
     <div class="village-stat">😺 <span class="stat-label">Kittens</span> ${k.current} / ${k.max}</div>
     <div class="village-stat">❤️ <span class="stat-label">Happiness</span> ${state.happiness}%</div>
     <div class="village-stat ${netCatnip < 0 ? 'warning' : ''}">🌿 <span class="stat-label">Catnip/s</span> ${prod.catnip.toFixed(2)} - ${consume.toFixed(2)} = ${netCatnip.toFixed(2)}</div>
+  </div>`;
+
+  const canTrade = state.resources.catnip.amount >= 10 && state.resources.wood.amount < state.resources.wood.cap;
+  html += `<div class="trade-row">
+    <button class="trade-btn" ${canTrade ? '' : 'disabled'}>🔄 Trade 10 🌿 → 1 🪵</button>
   </div>`;
 
   for (const jId of JOB_ORDER) {
@@ -525,6 +599,9 @@ function renderVillageTab(panel) {
       }
     });
   });
+
+  const tradeBtn = panel.querySelector('.trade-btn:not([disabled])');
+  if (tradeBtn) tradeBtn.addEventListener('click', doTrade);
 }
 
 function jobProdBonus(jId) {
@@ -752,10 +829,10 @@ let lastShownStep = -1;
 function checkTutorial() {
   if (!state.tutorial.active || state.tutorial.completed) return;
   const steps = [
-    { text:'', tab:null, check:() => true, auto:true },
-    { text:'', tab:null, check:() => true, auto:true },
-    { text:'We need more space! Build a <b>Hut</b> (5 Wood) to house more kittens.', tab:'build', check:() => state.buildings.hut >= 1 },
-    { text:'Now build a <b>Library</b> (25 Wood) so you can assign a Scholar and start researching!', tab:'build', check:() => state.buildings.library >= 1 },
+    { text:'🐱 <b>Welcome to Meow Hamlet!</b><br><br>Tap the grassy area above to gather Catnip. You\'ll need it to build your village!', tab:null, check:() => state.totalTaps >= 1 },
+    { text:'Great! Now trade 10 Catnip for 1 Wood in the <b>Village</b> tab.', tab:'village', check:() => state.resources.wood.amount >= 1 },
+    { text:'Now build a <b>Hut</b> in the Build tab to attract your first kitten!', tab:'build', check:() => state.buildings.hut >= 1 },
+    { text:'While your kitten arrives, build a <b>Library</b> (25 Wood) so you can start researching!', tab:'build', check:() => state.buildings.library >= 1 },
     { text:'Assign a <b>Scholar</b> in the Village tab to produce Science for research.', tab:'village', check:() => state.jobs.scholar >= 1 },
     { text:'Go to the <b>Research</b> tab and discover the <b>Calendar</b> to track seasons!', tab:'research', check:() => state.techs.calendar },
     { text:'Winter is coming! Make sure you have enough Catnip stored. Keep building and expanding! 🐱', tab:'village', check:() => false }
@@ -770,7 +847,7 @@ function checkTutorial() {
   }
 
   const s = steps[step];
-  if (s.auto || s.check()) {
+  if (s.check()) {
     state.tutorial.step++;
     lastShownStep = -1;
     checkTutorial();
@@ -830,24 +907,35 @@ function initEvents() {
     });
   });
 
+  let lastTapTime = 0;
+
   function handleTap(e, clientX, clientY) {
-    let bonus = 1;
-    state.resources.catnip.amount = Math.min(
-      state.resources.catnip.amount + bonus,
-      state.resources.catnip.cap
-    );
+    const now = Date.now();
+    if (now - lastTapTime < 80) return;
+    lastTapTime = now;
+
+    const cap = state.resources.catnip.cap;
+    if (state.resources.catnip.amount < cap) {
+      state.resources.catnip.amount = Math.min(state.resources.catnip.amount + 1, cap);
+    }
+    state.totalTaps++;
 
     const fx = document.getElementById('tap-fx-layer');
     const el = document.createElement('div');
     el.className = 'tap-fx';
-    el.textContent = `+${bonus} 🌿`;
+    el.textContent = '+1 🌿';
     const rect = document.getElementById('map-container').getBoundingClientRect();
     const x = ((clientX - rect.left) / rect.width) * 100;
     const y = ((clientY - rect.top) / rect.height) * 100;
     el.style.left = x + '%';
     el.style.top = y + '%';
     fx.appendChild(el);
-    setTimeout(() => el.remove(), 800);
+    el.addEventListener('animationend', () => el.remove(), { once: true });
+    setTimeout(() => { if (el.parentNode) el.remove(); }, 900);
+
+    if (state.tutorial.active && !state.tutorial.completed) {
+      checkTutorial();
+    }
   }
 
   document.getElementById('map-area').addEventListener('click', (e) => {
@@ -855,9 +943,8 @@ function initEvents() {
   });
 
   document.getElementById('map-area').addEventListener('touchstart', (e) => {
-    e.preventDefault();
     handleTap(e, e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: false });
+  }, { passive: true });
 
   document.getElementById('resources-scroll').addEventListener('mouseover', (e) => {
     const item = e.target.closest('.res-item');
