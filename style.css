@@ -281,6 +281,13 @@ html, body {
 }
 .building-sprite.type-barn .b-icon { font-size: 26px; }
 
+.building-sprite.type-pasture {
+  background: linear-gradient(135deg, #b8d8a0, #98c880);
+  border: 2px solid #78b060;
+  width: 60px; height: 44px;
+}
+.building-sprite.type-pasture .b-icon { font-size: 22px; }
+
 .building-sprite.type-mine {
   background: linear-gradient(135deg, #908878, #7a7060);
   border: 2px solid #6a6050;
@@ -306,6 +313,69 @@ html, body {
   background: linear-gradient(135deg, #c48868, #b07858);
   border: 2px solid #a06848;
   width: 52px; height: 52px;
+}
+
+.building-sprite.type-warehouse {
+  background: linear-gradient(135deg, #c8b898, #b8a888);
+  border: 2px solid #a89878;
+  width: 68px; height: 56px;
+}
+
+.building-sprite.type-loghouse {
+  background: linear-gradient(135deg, #b89878, #a88868);
+  border: 2px solid #987858;
+  width: 56px; height: 52px;
+}
+
+.building-sprite.type-academy {
+  background: linear-gradient(135deg, #a0b0d8, #8898c0);
+  border: 2px solid #7888b0;
+  width: 64px; height: 56px;
+}
+.building-sprite.type-academy .b-icon { font-size: 22px; }
+
+.building-sprite.type-amphitheatre {
+  background: linear-gradient(135deg, #d8b0a0, #c89888);
+  border: 2px solid #b88878;
+  width: 64px; height: 48px;
+}
+
+.building-sprite.type-chapel {
+  background: linear-gradient(135deg, #d8c8b0, #c8b8a0);
+  border: 2px solid #b8a890;
+  width: 48px; height: 56px;
+  border-radius: 8px 8px 12px 12px;
+}
+
+.building-sprite.type-temple {
+  background: linear-gradient(135deg, #e0d0b8, #d0c0a8);
+  border: 2px solid #c0b098;
+  width: 64px; height: 60px;
+  border-radius: 8px 8px 12px 12px;
+}
+
+.building-sprite.type-mint {
+  background: linear-gradient(135deg, #e8d8a8, #d8c898);
+  border: 2px solid #c8b888;
+  width: 52px; height: 48px;
+}
+
+.building-sprite.type-mansion {
+  background: linear-gradient(135deg, #d4b8a0, #c4a890);
+  border: 2px solid #b49880;
+  width: 72px; height: 60px;
+}
+
+.building-sprite.type-harbor {
+  background: linear-gradient(135deg, #a8c8d8, #88b0c0);
+  border: 2px solid #78a0b0;
+  width: 68px; height: 52px;
+}
+
+.building-sprite.type-factory {
+  background: linear-gradient(135deg, #a8a0a0, #908888);
+  border: 2px solid #807878;
+  width: 72px; height: 58px;
 }
 
 /* Smoke from smelter */
@@ -742,11 +812,50 @@ html, body {
 }
 
 /* ---- Upgrade Tab ---- */
-.upgrade-placeholder {
-  text-align: center;
-  padding: 20px;
-  color: #a08070;
+.upgrade-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #f5f0ea;
+  border: 1px solid #e0d5c8;
+  border-radius: 12px;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.upgrade-card.disabled { opacity: 0.5; }
+.upgrade-card.researched { background: #eaf5ea; border-color: #a0d4a0; }
+.upgrade-card .u-icon { font-size: 20px; width: 28px; text-align: center; }
+.upgrade-card .u-info { flex: 1; }
+.upgrade-card .u-name { font-weight: 700; font-size: 13px; }
+.upgrade-card .u-desc { font-size: 10px; color: #a09080; }
+.upgrade-card .u-cost { font-size: 11px; color: #a08070; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.upgrade-card .u-cost .met { color: #6aaf6a; }
+.upgrade-card .u-cost .unmet { color: #d47a6a; }
+.upgrade-card .u-researched { font-size: 12px; }
+.upgrade-card .u-status.locked { font-size: 11px; color: #c08060; font-style: italic; }
+
+.upgrade-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #b0a0d0, #9a88b8);
+  color: #fff;
+  font-weight: 700;
   font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+.upgrade-btn:active { transform: scale(0.92); }
+.upgrade-btn:disabled { opacity: 0.4; cursor: default; }
+
+.craft-card .c-bonus {
+  font-size: 10px;
+  color: #8a7a5a;
+  font-weight: 600;
+  margin-top: 1px;
 }
 
 /* ===== TUTORIAL ===== */

@@ -2,33 +2,46 @@
 // DATA DEFINITIONS
 // ============================
 const R = {
-  catnip:   { name:'Catnip',   icon:'🌿', baseCap:100, desc:'Food for kittens. If it reaches 0, the village starts starving.' },
-  wood:     { name:'Wood',     icon:'🪵', baseCap:100, desc:'Basic building material. Chop trees to gather.' },
-  minerals: { name:'Minerals', icon:'🪨', baseCap:100, desc:'Stone and ore for advanced construction.' },
-  coal:     { name:'Coal',     icon:'🖤', baseCap:50,  desc:'Fuel for the Smelter. Found while mining.' },
-  iron:     { name:'Iron',     icon:'⛏️', baseCap:50,  desc:'Smelted from Minerals and Coal.' },
-  science:  { name:'Science',  icon:'🔬', baseCap:100, desc:'Knowledge used for research.' },
-  beam:     { name:'Beam',     icon:'📐', baseCap:50,  desc:'Crafted from Wood. Used in construction.' },
-  slab:     { name:'Slab',     icon:'▣',  baseCap:50,  desc:'Crafted from Minerals. Used in construction.' }
+  catnip:    { name:'Catnip',    icon:'🌿', baseCap:100, color:'#00FF00', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'Food for kittens. If it reaches 0, the village starts starving.' },
+  wood:      { name:'Wood',      icon:'🪵', baseCap:100, color:'#8B4513', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:true, desc:'Basic building material. Chop trees to gather.' },
+  minerals:  { name:'Minerals',  icon:'🪨', baseCap:100, color:'#808080', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'Stone and ore for advanced construction.' },
+  coal:      { name:'Coal',      icon:'🖤', baseCap:50,  color:'#333333', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'Fuel for the Smelter. Found while mining.' },
+  iron:      { name:'Iron',      icon:'⛏️', baseCap:50,  color:'#B7410E', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'Smelted from Minerals and Coal.' },
+  titanium:  { name:'Titanium',  icon:'💎', baseCap:10,  color:'#C0C0C0', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'A rare, strong metal found deep underground.' },
+  gold:      { name:'Gold',      icon:'🪙', baseCap:25,  color:'#FFD700', type:'common', craftable:false, transient:false, visible:true, calculatePerTick:true, desc:'Precious metal for advanced crafting.' },
+  science:   { name:'Science',   icon:'🔬', baseCap:100, color:'#01A9DB', type:'common', craftable:false, transient:true,  visible:true, calculatePerTick:true, desc:'Knowledge used for research.' },
+  culture:   { name:'Culture',   icon:'🎭', baseCap:100, color:'#DF01D7', type:'common', craftable:false, transient:true,  visible:true, calculatePerTick:true, desc:'Art and entertainment for your kittens.' },
+  faith:     { name:'Faith',     icon:'🕯️', baseCap:100, color:'#808080', type:'common', craftable:false, transient:true,  visible:true, calculatePerTick:true, desc:'Spiritual devotion of your village.' },
+  beam:      { name:'Beam',      icon:'📐', baseCap:50,  color:'#8B6914', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'Crafted from Wood. Used in construction.' },
+  slab:      { name:'Slab',      icon:'▣',  baseCap:50,  color:'#808080', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'Crafted from Minerals. Used in construction.' },
+  plate:     { name:'Plate',     icon:'🛡️', baseCap:50,  color:'#B7410E', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'Crafted from Iron. Used in advanced construction.' },
+  steel:     { name:'Steel',     icon:'⚔️', baseCap:50,  color:'#708090', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'An alloy of Coal and Iron.' },
+  gear:      { name:'Gear',      icon:'⚙️', baseCap:25,  color:'#A0A0A0', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'Precision-crafted mechanical component.' },
+  scaffold:  { name:'Scaffold',  icon:'🏗️', baseCap:25,  color:'#CD853F', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'A construction framework of Beam and Slab.' },
+  parchment: { name:'Parchment', icon:'📜', baseCap:50,  color:'#F5DEB3', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'Thin material for writing, made from Catnip.' },
+  manuscript:{ name:'Manuscript',icon:'📖', baseCap:25,  color:'#D2B48C', type:'common', craftable:true,  transient:false, visible:true, calculatePerTick:false, desc:'A written document of knowledge and culture.' }
 };
 
-const R_ORDER = ['catnip','wood','minerals','coal','iron','science','beam','slab'];
+const R_ORDER = ['catnip','wood','minerals','coal','iron','titanium','gold','science','culture','faith','beam','slab','plate','steel','gear','scaffold','parchment','manuscript'];
 
 const JOBS = {
-  farmer:     { name:'Farmer',     icon:'🌾', unlockTech:null,      produces:'catnip',   desc:'Produces Catnip. Essential before winter.' },
-  woodcutter: { name:'Woodcutter', icon:'🪓', unlockTech:null,      produces:'wood',     desc:'Chops trees for Wood.' },
-  miner:      { name:'Miner',      icon:'⛏️', unlockTech:'mining',  produces:'minerals', desc:'Extracts Minerals. Small chance of Coal.' },
-  scholar:    { name:'Scholar',    icon:'📖', unlockTech:null,      produces:'science',  desc:'Studies to produce Science.' }
+  farmer:     { name:'Farmer',     icon:'🌾', unlockTech:null,          produces:'catnip',   desc:'Produces Catnip. Essential before winter.' },
+  woodcutter: { name:'Woodcutter', icon:'🪓', unlockTech:null,          produces:'wood',     desc:'Chops trees for Wood.' },
+  miner:      { name:'Miner',      icon:'⛏️', unlockTech:'mining',      produces:'minerals', desc:'Extracts Minerals. Small chance of Coal.' },
+  scholar:    { name:'Scholar',    icon:'📖', unlockTech:null,          produces:'science',  desc:'Studies to produce Science.' },
+  priest:     { name:'Priest',     icon:'✝️', unlockTech:'theology',    produces:'faith',    desc:'Produces Faith in the Chapel or Temple.' },
+  engineer:   { name:'Engineer',   icon:'🔧', unlockTech:'construction',produces:'craft',    desc:'Works in the Workshop on automation.' }
 };
 
-const JOB_ORDER = ['farmer','woodcutter','miner','scholar'];
+const JOB_ORDER = ['farmer','woodcutter','miner','scholar','priest','engineer'];
 
 const B = {
   field:{
     name:'Catnip Field', icon:'🌱', cost:{ wood:5 },
-    effect:'Catnip production per Farmer',
+    effect:'+0.125 catnip/s base + 50% per Farmer',
     desc:'A small patch of catnip. Each farmer produces more per field.',
     unlockTech:null, color:'type-field', maxCount:5,
+    effects:{ catnipPerTickBase:0.125 },
     mapPositions:[[30,55],[18,68],[42,68],[25,80],[50,80]]
   },
   hut:{
@@ -36,6 +49,7 @@ const B = {
     effect:'+1 max kitten',
     desc:'A tiny wooden hut. Adds space for one more kitten.',
     unlockTech:null, color:'type-hut', maxCount:10,
+    effects:{ maxKittens:1 },
     mapPositions:[[5,45],[14,52],[8,62],[22,55],[18,70],[30,50],[40,75],[55,55],[65,50],[70,65]]
   },
   barn:{
@@ -43,54 +57,289 @@ const B = {
     effect:'+100 storage (catnip, wood, minerals)',
     desc:'Increases storage for basic resources.',
     unlockTech:'agriculture', color:'type-barn', maxCount:3,
+    effects:{ catnipMax:100, woodMax:200, mineralsMax:250 },
     mapPositions:[[25,38],[40,35],[55,38]]
+  },
+  pasture:{
+    name:'Pasture', icon:'🌿', cost:{ wood:10, catnip:10 },
+    effect:'+5% catnip production ratio',
+    desc:'Kittens graze and improve catnip yield.',
+    unlockTech:'agriculture', color:'type-pasture', maxCount:5,
+    effects:{ catnipRatio:0.03 },
+    mapPositions:[[35,60],[45,65],[55,60],[42,72],[52,75]]
   },
   mine:{
     name:'Mine', icon:'⛰️', cost:{ wood:15, minerals:10 },
-    effect:'Unlocks better Minerals production',
+    effect:'+0.2 minerals/s base, +20% mineral production ratio',
     desc:'A cave entrance. Miners produce more minerals with each mine.',
-    unlockTech:'mining', color:'type-mine', maxCount:3,
-    mapPositions:[[72,30],[82,38],[85,50]]
+    unlockTech:'mining', color:'type-mine', maxCount:5,
+    effects:{ mineralsPerTickBase:0.2, mineralsRatio:0.2 },
+    mapPositions:[[72,30],[82,38],[85,50],[88,60],[80,70]]
   },
   workshop:{
     name:'Workshop', icon:'🔨', cost:{ wood:20, minerals:15 },
     effect:'Unlocks crafting',
     desc:'A wooden workbench hut. Enables crafting.',
     unlockTech:'mining', color:'type-workshop', maxCount:2,
+    effects:{},
     mapPositions:[[5,30],[12,38]]
   },
   library:{
     name:'Library', icon:'📚', cost:{ wood:25 },
-    effect:'Scholars produce Science',
+    effect:'+10% science ratio, +250 science max',
     desc:'Scholars produce science with each library.',
-    unlockTech:null, color:'type-library', maxCount:2,
-    mapPositions:[[38,18],[52,18]]
+    unlockTech:null, color:'type-library', maxCount:5,
+    effects:{ scienceRatio:0.1, scienceMax:250 },
+    mapPositions:[[38,18],[52,18],[30,8],[48,8],[60,12]]
   },
   smelter:{
     name:'Smelter', icon:'🔥', cost:{ wood:25, minerals:15 },
     effect:'Produces Iron from Minerals + Coal',
     desc:'Smelts Iron using Minerals and Coal.',
-    unlockTech:'metalworking', color:'type-smelter', maxCount:2,
-    mapPositions:[[68,18],[82,25]]
+    unlockTech:'metalworking', color:'type-smelter', maxCount:3,
+    effects:{},
+    mapPositions:[[68,18],[82,25],[75,35]]
+  },
+  warehouse:{
+    name:'Warehouse', icon:'🏭', cost:{ wood:30, minerals:20 },
+    effect:'+75% storage ratio bonus',
+    desc:'Large storage facility. Increases all resource caps.',
+    unlockTech:'construction', color:'type-warehouse', maxCount:3,
+    effects:{ warehouseStorageRatio:0.75 },
+    mapPositions:[[20,42],[30,45],[40,48]]
+  },
+  loghouse:{
+    name:'Log House', icon:'🪵', cost:{ wood:40, minerals:10 },
+    effect:'+2 max kittens',
+    desc:'A sturdy log cabin. Houses more kittens.',
+    unlockTech:'construction', color:'type-loghouse', maxCount:5,
+    effects:{ maxKittens:2 },
+    mapPositions:[[10,48],[22,50],[35,52],[48,48],[58,52]]
+  },
+  academy:{
+    name:'Academy', icon:'🎓', cost:{ wood:50, minerals:30, beam:5 },
+    effect:'+20% science ratio, +500 science max',
+    desc:'An institution of higher learning.',
+    unlockTech:'education', color:'type-academy', maxCount:5,
+    effects:{ scienceRatio:0.2, scienceMax:500 },
+    mapPositions:[[45,10],[58,12],[70,15]]
+  },
+  amphitheatre:{
+    name:'Amphitheatre', icon:'🎭', cost:{ wood:40, minerals:25 },
+    effect:'+0.1 culture/s, +5% happiness',
+    desc:'A place of entertainment and culture.',
+    unlockTech:'philosophy', color:'type-amphitheatre', maxCount:5,
+    effects:{ culturePerTickBase:0.1, happinessBonus:0.05 },
+    mapPositions:[[15,20],[25,25],[35,22]]
+  },
+  chapel:{
+    name:'Chapel', icon:'⛪', cost:{ wood:30, minerals:15 },
+    effect:'+0.05 faith/s',
+    desc:'A small place of worship.',
+    unlockTech:'theology', color:'type-chapel', maxCount:5,
+    effects:{ faithPerTickBase:0.05 },
+    mapPositions:[[60,22],[70,25],[80,20]]
+  },
+  temple:{
+    name:'Temple', icon:'🏛️', cost:{ wood:60, minerals:40, slab:10 },
+    effect:'+0.15 faith/s, +500 faith max',
+    desc:'A grand temple to the cat gods.',
+    unlockTech:'theology', color:'type-temple', maxCount:2,
+    effects:{ faithPerTickBase:0.15, faithMax:500 },
+    mapPositions:[[65,30],[78,32]]
+  },
+  mint:{
+    name:'Mint', icon:'🪙', cost:{ wood:75, minerals:50, plate:10 },
+    effect:'+0.05 gold/s (consumes culture)',
+    desc:'Produces gold coins from culture.',
+    unlockTech:'currency', color:'type-mint', maxCount:3,
+    effects:{ goldPerTickBase:0.05 },
+    mapPositions:[[42,5],[55,5],[68,5]]
+  },
+  mansion:{
+    name:'Mansion', icon:'🏰', cost:{ wood:100, minerals:60, slab:15 },
+    effect:'+4 max kittens',
+    desc:'A luxurious mansion for your growing village.',
+    unlockTech:'engineering', color:'type-mansion', maxCount:5,
+    effects:{ maxKittens:4 },
+    mapPositions:[[65,42],[75,45],[82,50],[88,55],[75,58]]
+  },
+  harbor:{
+    name:'Harbor', icon:'⚓', cost:{ wood:120, minerals:80, beam:15 },
+    effect:'+50% storage ratio bonus',
+    desc:'A harbor for trade ships. Boosts storage.',
+    unlockTech:'navigation', color:'type-harbor', maxCount:3,
+    effects:{ harborStorageRatio:0.5 },
+    mapPositions:[[10,70],[20,75],[30,78]]
+  },
+  factory:{
+    name:'Factory', icon:'🏭', cost:{ wood:150, minerals:100, steel:20, gear:5 },
+    effect:'+50% global craft ratio',
+    desc:'An industrial factory. Improves all crafting.',
+    unlockTech:'mechanization', color:'type-factory', maxCount:3,
+    effects:{ craftRatio:0.5 },
+    mapPositions:[[58,42],[70,45],[82,48]]
   }
 };
 
-const B_ORDER = ['field','hut','barn','mine','workshop','library','smelter'];
+const B_ORDER = ['field','hut','barn','pasture','mine','workshop','library','smelter','warehouse','loghouse','academy','amphitheatre','chapel','temple','mint','mansion','harbor','factory'];
 
 const TECHS = {
   calendar:{ name:'Calendar', cost:10, icon:'📅', unlocks:'Seasons cycle', desc:'Understanding the seasons.', prereq:null },
-  agriculture:{ name:'Agriculture', cost:30, icon:'🌾', unlocks:'Barn', desc:'Farming techniques.', prereq:'calendar' },
+  agriculture:{ name:'Agriculture', cost:30, icon:'🌾', unlocks:'Barn, Pasture, Farmer', desc:'Farming techniques.', prereq:'calendar' },
   mining:{ name:'Mining', cost:120, icon:'⛏️', unlocks:'Miner, Mine, Workshop', desc:'Extract minerals.', prereq:'agriculture' },
   writing:{ name:'Writing', cost:300, icon:'✍️', unlocks:'Advanced research', desc:'Record knowledge for future research.', prereq:'mining' },
-  metalworking:{ name:'Metalworking', cost:200, icon:'⚒️', unlocks:'Smelter, Iron', desc:'Smelt iron.', prereq:'mining' }
+  metalworking:{ name:'Metalworking', cost:200, icon:'⚒️', unlocks:'Smelter, Iron', desc:'Smelt iron.', prereq:'mining' },
+  construction:{ name:'Construction', cost:400, icon:'🏗️', unlocks:'Warehouse, Log House, Engineer', desc:'Better buildings.', prereq:'mining' },
+  education:{ name:'Education', cost:600, icon:'🎓', unlocks:'Academy', desc:'Higher learning.', prereq:'writing' },
+  philosophy:{ name:'Philosophy', cost:800, icon:'💭', unlocks:'Amphitheatre', desc:'The art of thinking.', prereq:'writing' },
+  theology:{ name:'Theology', cost:1200, icon:'✝️', unlocks:'Chapel, Temple, Priest', desc:'Study of the divine.', prereq:'philosophy' },
+  engineering:{ name:'Engineering', cost:1500, icon:'⚙️', unlocks:'Mansion', desc:'Advanced construction.', prereq:'construction' },
+  navigation:{ name:'Navigation', cost:2500, icon:'🧭', unlocks:'Harbor', desc:'Sailing the seas.', prereq:'engineering' },
+  currency:{ name:'Currency', cost:3000, icon:'🪙', unlocks:'Mint', desc:'Standardized money.', prereq:'engineering' },
+  mechanization:{ name:'Mechanization', cost:5000, icon:'⚡', unlocks:'Factory', desc:'Industrial revolution.', prereq:'engineering' }
 };
 
-const T_ORDER = ['calendar','agriculture','mining','writing','metalworking'];
+const T_ORDER = ['calendar','agriculture','mining','writing','metalworking','construction','education','philosophy','theology','engineering','navigation','currency','mechanization'];
 
 const CRAFTS = {
-  beam:{ name:'Beam', icon:'📐', inputs:{ wood:175 }, output:'beam', outputQty:1, desc:'175 Wood' },
-  slab:{ name:'Slab', icon:'▣', inputs:{ minerals:250 }, output:'slab', outputQty:1, desc:'250 Minerals' }
+  wood:{ name:'Wood', icon:'🪵', inputs:{ catnip:100 }, output:'wood', outputQty:1, desc:'100 Catnip → 1 Wood' },
+  beam:{ name:'Beam', icon:'📐', inputs:{ wood:175 }, output:'beam', outputQty:1, desc:'175 Wood → 1 Beam' },
+  slab:{ name:'Slab', icon:'▣', inputs:{ minerals:250 }, output:'slab', outputQty:1, desc:'250 Minerals → 1 Slab' },
+  plate:{ name:'Plate', icon:'🛡️', inputs:{ iron:125 }, output:'plate', outputQty:1, desc:'125 Iron → 1 Plate' },
+  steel:{ name:'Steel', icon:'⚔️', inputs:{ coal:100, iron:100 }, output:'steel', outputQty:1, desc:'100 Coal + 100 Iron → 1 Steel' },
+  gear:{ name:'Gear', icon:'⚙️', inputs:{ steel:15 }, output:'gear', outputQty:1, desc:'15 Steel → 1 Gear' },
+  scaffold:{ name:'Scaffold', icon:'🏗️', inputs:{ beam:1, slab:1 }, output:'scaffold', outputQty:1, desc:'1 Beam + 1 Slab → 1 Scaffold' },
+  parchment:{ name:'Parchment', icon:'📜', inputs:{ catnip:100 }, output:'parchment', outputQty:1, desc:'100 Catnip → 1 Parchment' },
+  manuscript:{ name:'Manuscript', icon:'📖', inputs:{ parchment:1, culture:25 }, output:'manuscript', outputQty:1, desc:'1 Parchment + 25 Culture → 1 Manuscript' }
 };
+
+// ============================
+// WORKSHOP UPGRADES
+// ============================
+const UPGRADES = {
+  mineralHoes:{
+    name:'Mineral Hoes', icon:'⛏️',
+    desc:'Mineral-tipped hoes. +50% catnip job production.',
+    effects:{ catnipJobRatio:0.5 },
+    prices:[{name:'minerals',val:275},{name:'science',val:100}],
+    unlocks:{ upgrades:['ironHoes'] }
+  },
+  ironHoes:{
+    name:'Iron Hoes', icon:'⛏️',
+    desc:'Strong iron hoes. +30% catnip job production.',
+    effects:{ catnipJobRatio:0.3 },
+    prices:[{name:'iron',val:25},{name:'science',val:200}]
+  },
+  mineralAxes:{
+    name:'Mineral Axes', icon:'🪓',
+    desc:'Mineral axes. +70% wood job production.',
+    effects:{ woodJobRatio:0.7 },
+    prices:[{name:'minerals',val:500},{name:'science',val:100}],
+    unlocks:{ upgrades:['ironAxes'] }
+  },
+  ironAxes:{
+    name:'Iron Axes', icon:'🪓',
+    desc:'Iron axes. +50% wood job production.',
+    effects:{ woodJobRatio:0.5 },
+    prices:[{name:'iron',val:50},{name:'science',val:200}],
+    unlocks:{ upgrades:['steelAxe'] }
+  },
+  steelAxe:{
+    name:'Steel Axe', icon:'🪓',
+    desc:'Steel axes. +50% wood job production.',
+    effects:{ woodJobRatio:0.5 },
+    prices:[{name:'steel',val:5},{name:'science',val:500}]
+  },
+  mineralPickaxes:{
+    name:'Mineral Pickaxes', icon:'⛏️',
+    desc:'Mineral pickaxes. +50% minerals job production.',
+    effects:{ mineralsJobRatio:0.5 },
+    prices:[{name:'minerals',val:750},{name:'science',val:100}],
+    unlocks:{ upgrades:['ironPickaxes'] }
+  },
+  ironPickaxes:{
+    name:'Iron Pickaxes', icon:'⛏️',
+    desc:'Iron pickaxes. +50% minerals job production.',
+    effects:{ mineralsJobRatio:0.5 },
+    prices:[{name:'iron',val:75},{name:'science',val:200}],
+    unlocks:{ upgrades:['steelPickaxes'] }
+  },
+  steelPickaxes:{
+    name:'Steel Pickaxes', icon:'⛏️',
+    desc:'Steel pickaxes. +50% minerals job production.',
+    effects:{ mineralsJobRatio:0.5 },
+    prices:[{name:'steel',val:10},{name:'science',val:500}]
+  },
+  reinforcedSaw:{
+    name:'Reinforced Saw', icon:'🪚',
+    desc:'+100% beam craft ratio (double output).',
+    effects:{ beamCraftRatio:1 },
+    prices:[{name:'iron',val:5},{name:'science',val:250}]
+  },
+  blastFurnace:{
+    name:'Blast Furnace', icon:'🔥',
+    desc:'+100% steel craft ratio (double output).',
+    effects:{ steelCraftRatio:1 },
+    prices:[{name:'steel',val:10},{name:'science',val:1000}]
+  },
+  underwaterFloor:{
+    name:'Underwater Floor', icon:'💧',
+    desc:'+100% parchment craft ratio (double output).',
+    effects:{ parchmentCraftRatio:1 },
+    prices:[{name:'iron',val:10},{name:'science',val:500}]
+  },
+  cuneiform:{
+    name:'Cuneiform', icon:'✍️',
+    desc:'+100% manuscript craft ratio.',
+    effects:{ manuscriptCraftRatio:1 },
+    prices:[{name:'gold',val:10},{name:'science',val:2000}]
+  },
+  printingPress:{
+    name:'Printing Press', icon:'📰',
+    desc:'+100% manuscript craft ratio.',
+    effects:{ manuscriptCraftRatio:1 },
+    prices:[{name:'steel',val:20},{name:'gear',val:10},{name:'science',val:5000}]
+  },
+  efficientRefining:{
+    name:'Efficient Refining', icon:'⚗️',
+    desc:'+50% steel craft ratio.',
+    effects:{ steelCraftRatio:0.5 },
+    prices:[{name:'titanium',val:5},{name:'science',val:10000}]
+  },
+  reinforcedBarn:{
+    name:'Reinforced Barn', icon:'🏚️',
+    desc:'+100% barn storage ratio.',
+    effects:{ barnStorageRatio:1 },
+    prices:[{name:'iron',val:10},{name:'science',val:500}]
+  },
+  cargoShips:{
+    name:'Cargo Ships', icon:'🚢',
+    desc:'+100% harbor storage ratio.',
+    effects:{ harborStorageRatio:1 },
+    prices:[{name:'steel',val:20},{name:'gold',val:10},{name:'science',val:3000}]
+  },
+  deepMining:{
+    name:'Deep Mining', icon:'⛰️',
+    desc:'+0.003 coal/s base from mines.',
+    effects:{ coalPerTickBase:0.003 },
+    prices:[{name:'steel',val:15},{name:'science',val:2000}]
+  },
+  hydraulicPress:{
+    name:'Hydraulic Press', icon:'🔧',
+    desc:'+100% gear craft ratio.',
+    effects:{ gearCraftRatio:1 },
+    prices:[{name:'gear',val:10},{name:'science',val:5000}]
+  },
+  factoryLogistics:{
+    name:'Factory Logistics', icon:'📦',
+    desc:'+50% global craft ratio.',
+    effects:{ craftRatio:0.5 },
+    prices:[{name:'gear',val:20},{name:'titanium',val:5},{name:'science',val:10000}]
+  }
+};
+
+const UPGRADE_ORDER = ['mineralHoes','ironHoes','mineralAxes','ironAxes','steelAxe','mineralPickaxes','ironPickaxes','steelPickaxes','reinforcedSaw','blastFurnace','underwaterFloor','cuneiform','printingPress','efficientRefining','reinforcedBarn','cargoShips','deepMining','hydraulicPress','factoryLogistics'];
 
 function getTradeCost() {
   return Math.ceil(10 * Math.pow(1.12, state.tradeCount));
@@ -115,18 +364,31 @@ function doTrade() {
 // ============================
 let state;
 
+function createResource(id) {
+  const cfg = R[id];
+  return {
+    name: id,
+    amount: 0,
+    cap: cfg.baseCap || 0,
+    perTickCached: 0,
+    unlocked: id === 'catnip' || id === 'wood',
+    isHidden: false
+  };
+}
+
 function createState() {
   const s = {
     resources:{},
     buildings:{},
     jobs:{},
-    unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:true },
+    unlockedJobs:{ farmer:true, woodcutter:true, miner:false, scholar:true, priest:false, engineer:false },
     techs:{},
+    upgrades:{},
     craftsUnlocked:false,
     season:0,
     seasonTick:0,
     seasonLength:45,
-    kittens:{ current:0, max:0 },
+    kittens:{ current:0, max:5 },
     happiness:100,
     tick:0,
     tutorial:{ step:0, active:true, completed:false },
@@ -135,16 +397,19 @@ function createState() {
     tradeCount:0,
     hutProgress:[],
     starvingTicks:0,
+    deathTimeout:0,
     catnipLowWarned:false,
     winterWarned:false,
     gameOver:false
   };
   for (const id of R_ORDER) {
-    s.resources[id] = { amount: 0, cap: R[id].baseCap };
+    s.resources[id] = createResource(id);
   }
   for (const id of B_ORDER) s.buildings[id] = 0;
   for (const id of JOB_ORDER) s.jobs[id] = 0;
   for (const id of T_ORDER) s.techs[id] = false;
+  for (const id of UPGRADE_ORDER) s.upgrades[id] = false;
+  s.buildings.field = 1;
   return s;
 }
 
@@ -168,80 +433,296 @@ function canAfford(cost) {
   return true;
 }
 
+function canAffordPriceList(prices) {
+  for (const p of prices) {
+    if ((state.resources[p.name]?.amount ?? 0) < p.val) return false;
+  }
+  return true;
+}
+
 function spend(cost) {
   for (const [res, amt] of Object.entries(cost)) {
     state.resources[res].amount -= amt;
   }
 }
 
+function spendPriceList(prices) {
+  for (const p of prices) {
+    state.resources[p.name].amount -= p.val;
+  }
+}
+
+// ============================
+// EFFECTS SYSTEM
+// ============================
+let _effectsCache = {};
+let _effectsDirty = true;
+
+function getEffect(name) {
+  if (!_effectsDirty && _effectsCache[name] !== undefined) return _effectsCache[name];
+  let total = 0;
+
+  for (const [id, count] of Object.entries(state.buildings)) {
+    if (count > 0 && B[id]?.effects?.[name]) {
+      total += B[id].effects[name] * count;
+    }
+  }
+
+  for (const [id, researched] of Object.entries(state.upgrades)) {
+    if (researched && UPGRADES[id]?.effects?.[name]) {
+      total += UPGRADES[id].effects[name];
+    }
+  }
+
+  _effectsCache[name] = total;
+  return total;
+}
+
+function markEffectsDirty() {
+  _effectsDirty = true;
+  _effectsCache = {};
+}
+
+function recalcEffects() {
+  for (const name of Object.keys(_effectsCache)) {
+    _effectsCache[name] = undefined;
+  }
+  _effectsCache = {};
+  _effectsDirty = false;
+
+  for (const [id, count] of Object.entries(state.buildings)) {
+    if (count > 0 && B[id]?.effects) {
+      for (const [eff, val] of Object.entries(B[id].effects)) {
+        _effectsCache[eff] = (_effectsCache[eff] || 0) + val * count;
+      }
+    }
+  }
+
+  for (const [id, researched] of Object.entries(state.upgrades)) {
+    if (researched && UPGRADES[id]?.effects) {
+      for (const [eff, val] of Object.entries(UPGRADES[id].effects)) {
+        _effectsCache[eff] = (_effectsCache[eff] || 0) + val;
+      }
+    }
+  }
+}
+
+// ============================
+// HAPPINESS
+// ============================
+function calcHappiness() {
+  let happiness = 1.0;
+  const kittens = state.kittens.current;
+  if (kittens > 5) {
+    happiness -= 0.02 * (kittens - 5);
+  }
+  happiness += getEffect('happinessBonus');
+  happiness = Math.max(0.25, happiness);
+  return happiness;
+}
+
+// ============================
+// PRODUCTION ENGINE
+// ============================
+function getWeatherMod(resName) {
+  if (resName !== 'catnip') return 1.0;
+  const mods = [1.5, 1.0, 1.0, 0.25];
+  return mods[state.season];
+}
+
+function calcResourcePerTick(resName) {
+  const cfg = R[resName];
+  if (!cfg || !cfg.calculatePerTick) return 0;
+
+  let perTick = 0;
+
+  // Step 1: building base production
+  perTick += getEffect(resName + 'PerTickBase');
+
+  // Step 2: season modifier (catnip only)
+  perTick *= getWeatherMod(resName);
+
+  // Step 3: job production from JOBS table
+  let resProduction = 0;
+  for (const [jId, job] of Object.entries(JOBS)) {
+    if (job.produces === resName && state.jobs[jId] > 0) {
+      const happiness = calcHappiness();
+      const jMod = JOB_MODS[jId] || 0;
+      let jobProd = state.jobs[jId] * jMod;
+      if (jobProd > 0) jobProd *= happiness;
+      resProduction += jobProd;
+    }
+  }
+
+  // Step 4: base job production
+  perTick += resProduction;
+
+  // Step 5: job ratio effects (workshop tool upgrades)
+  perTick += resProduction * getEffect(resName + 'JobRatio');
+
+  // Step 6: ratio effects (building multipliers)
+  perTick *= 1 + getEffect(resName + 'Ratio');
+
+  // Step 7: auto-production
+  perTick += getEffect(resName + 'PerTickAutoprod');
+
+  // Step 8: direct building production
+  perTick += getEffect(resName + 'PerTickProd');
+
+  // Step 9-10: consumption
+  let resConsumption = 0;
+  if (resName === 'catnip') {
+    resConsumption = state.kittens.current * 0.75;
+  }
+  perTick -= resConsumption;
+
+  return perTick;
+}
+
+const JOB_MODS = {
+  farmer: 1.0,
+  woodcutter: 0.5,
+  miner: 0.1,
+  scholar: 0.035,
+  priest: 0.05,
+  engineer: 0
+};
+
+function addRes(res, value) {
+  if (value === 0 || !res) return 0;
+  const limit = Math.max(res.amount, res.cap);
+  res.amount += value;
+  if (res.amount > limit) res.amount = limit;
+  if (res.amount < 0.0000000001) res.amount = 0;
+  if (!res.unlocked && res.amount > 0) res.unlocked = true;
+  return value;
+}
+
 function getResourceProduction() {
-  const prod = { catnip:0, wood:0, minerals:0, coal:0, science:0, iron:0 };
+  const prod = { catnip:0, wood:0, minerals:0, coal:0, science:0, iron:0, titanium:0, gold:0, culture:0, faith:0 };
+  for (const id of Object.keys(prod)) {
+    prod[id] = calcResourcePerTick(id);
+  }
 
-  const f = state.buildings.field;
-  const wc = state.jobs.woodcutter;
+  // Coal from miners (small chance)
   const mn = state.jobs.miner;
-  const mg = state.buildings.mine;
-  const sc = state.jobs.scholar;
-  const lb = state.buildings.library;
-  const sm = state.buildings.smelter;
-
-  let cp = state.jobs.farmer * (1.0 + f * 0.5);
-  const seasonMul = [1.5, 1.0, 1.0, 0.25][state.season];
-  cp *= seasonMul;
-  cp *= (state.happiness / 100);
-  prod.catnip = cp;
-
-  prod.wood = wc * 0.5;
-
-  prod.minerals = mn * (0.2 + mg * 0.15);
-
-  prod.coal = 0;
   for (let i = 0; i < mn; i++) {
     if (Math.random() < 0.05) prod.coal += 0.5;
   }
 
-  prod.science = (state.kittens.current * 0.02) + (state.jobs.farmer * 0.01) + (wc * 0.01) + (sc * (0.035 + lb * 0.035));
-
-  if (sm > 0) {
-    const ironRate = sm * 0.1;
-    const mineralCost = ironRate * 2;
-    const coalCost = ironRate * 1;
-    if (state.resources.minerals.amount >= mineralCost && state.resources.coal.amount >= coalCost) {
-      state.resources.minerals.amount -= mineralCost;
-      state.resources.coal.amount -= coalCost;
-      prod.iron = ironRate;
-    }
-  }
-
   return prod;
+}
+
+function processSmelter() {
+  const sm = state.buildings.smelter;
+  if (sm <= 0) return 0;
+  const ironRate = sm * 0.1;
+  const mineralCost = ironRate * 2;
+  const coalCost = ironRate * 1;
+  const minerals = state.resources.minerals;
+  const coal = state.resources.coal;
+  if (minerals.amount >= mineralCost && coal.amount >= coalCost) {
+    minerals.amount -= mineralCost;
+    coal.amount -= coalCost;
+    return ironRate;
+  }
+  return 0;
+}
+
+function processMint() {
+  const mintCount = state.buildings.mint;
+  if (mintCount <= 0) return 0;
+  const culture = state.resources.culture;
+  if (culture.amount <= 0) return 0;
+  const cultureConsumed = mintCount * 0.04;
+  const available = Math.min(cultureConsumed, culture.amount);
+  culture.amount -= available;
+  return getEffect('goldPerTickBase') * mintCount;
 }
 
 function getCatnipConsumption() {
   return state.kittens.current * 0.75;
 }
 
+function resPoolUpdate(prod) {
+  if (!prod) prod = getResourceProduction();
+
+  for (const id of R_ORDER) {
+    const res = state.resources[id];
+    const cfg = R[id];
+
+    // 1. Update maxValue from effects
+    const effMax = getEffect(id + 'Max');
+    let maxVal = effMax > 0 ? effMax : (cfg.baseCap || 0);
+    if (maxVal <= 0) maxVal = cfg.baseCap || 0;
+    // Apply barn/warehouse/harbor ratio for basic resources
+    if (id === 'catnip' || id === 'wood' || id === 'minerals' || id === 'coal' || id === 'iron' || id === 'titanium' || id === 'gold') {
+      maxVal = applyStorageRatio(id, maxVal);
+    }
+    res.cap = Math.max(res.cap, maxVal);
+
+    // 2. Calculate perTick
+    let resPerTick = prod[id] || 0;
+    if (id === 'iron') resPerTick += processSmelter();
+    if (id === 'gold') resPerTick += processMint();
+    res.perTickCached = resPerTick;
+
+    // 3. Apply production
+    if (resPerTick !== 0) {
+      addRes(res, resPerTick);
+    }
+
+    // 4. Auto-unlock
+    if (!res.unlocked && res.amount > 0) {
+      res.unlocked = true;
+    }
+  }
+}
+
+function applyStorageRatio(resName, baseMax) {
+  const barnCount = state.buildings.barn;
+  const warehouseCount = state.buildings.warehouse;
+  const harborCount = state.buildings.harbor;
+
+  const totalB = barnCount + warehouseCount + harborCount;
+  if (totalB === 0) return baseMax;
+
+  let ratio = 1;
+  const warehouseEff = getEffect('warehouseStorageRatio');
+  const harborEff = getEffect('harborStorageRatio');
+  const barnEff = getEffect('barnStorageRatio');
+
+  const wRatio = 1 + (warehouseCount * (warehouseEff || 0.75) + harborCount * (harborEff || 0.5)) / totalB;
+  const extraBarn = barnCount * (barnEff || 0);
+  ratio = wRatio + extraBarn;
+
+  return baseMax * ratio;
+}
+
 function tick() {
   if (state.gameOver) return;
   state.tick++;
 
+  // Recalculate happiness
+  state.happiness = Math.round(calcHappiness() * 100);
+
+  // Resource production
   const prod = getResourceProduction();
+  resPoolUpdate(prod);
+
+  state.totalCatnipHarvested += Math.max(0, prod.catnip);
   const consume = getCatnipConsumption();
 
-  for (const [res, amt] of Object.entries(prod)) {
-    if (state.resources[res]) {
-      state.resources[res].amount += amt;
-    }
-  }
-
-  state.resources.catnip.amount -= consume;
-  state.totalCatnipHarvested += Math.max(0, prod.catnip);
-
+  // Clamp all resources
   for (const id of R_ORDER) {
     const r = state.resources[id];
-    r.amount = Math.max(0, Math.min(r.amount, r.cap));
+    if (r.amount < 0) r.amount = 0;
+    if (r.amount > r.cap) r.amount = r.cap;
   }
 
-  // Hut migration: mỗi 5 ticks 1 mèo đến
+  // Hut migration: every 5 ticks 1 kitten arrives
+  if (state.deathTimeout > 0) state.deathTimeout--;
+
   for (let i = 0; i < state.hutProgress.length; i++) {
     if (state.hutProgress[i] > 0) {
       state.hutProgress[i]--;
@@ -257,16 +738,16 @@ function tick() {
     }
   }
 
-  // Starvation
-  if (state.resources.catnip.amount <= 0 && consume > 0) {
+  // Starvation: max 1 kitten per tick, 5-second cooldown
+  const catnipPerTick = prod.catnip - consume;
+  if (state.kittens.current > 0 && state.resources.catnip.amount <= 0 && catnipPerTick < 0) {
     state.starvingTicks++;
-    if (state.starvingTicks === 10) {
-      notify('😿 Kittens are starving! Lost 1 kitten.', 'warning');
-      killKitten();
-    } else if (state.starvingTicks > 10 && (state.starvingTicks - 10) % 5 === 0) {
+    if (state.deathTimeout <= 0 && state.starvingTicks >= 1) {
       if (state.kittens.current > 0) {
-        notify('😿 A kitten has died from starvation.', 'warning');
+        notify('😿 A kitten has died from starvation!', 'warning');
         killKitten();
+        state.deathTimeout = 5;
+        state.starvingTicks = 0;
       }
     }
   } else {
@@ -451,17 +932,17 @@ function renderStarvationBar() {
   const text = bar.querySelector('.starvation-text');
   if (state.starvingTicks > 0 && state.kittens.current > 0) {
     bar.classList.remove('hidden');
-    const max = state.starvingTicks < 10 ? 10 : 5;
-    const cur = state.starvingTicks < 10 ? state.starvingTicks : (state.starvingTicks - 10) % 5;
-    const pct = Math.min((cur / max) * 100, 100);
+    const cooldown = state.deathTimeout;
+    const maxCooldown = 5;
+    const pct = cooldown > 0 ? ((maxCooldown - cooldown) / maxCooldown) * 100 : 100;
     fill.style.width = pct + '%';
     if (pct < 40) fill.style.background = '#e8c84a';
     else if (pct < 70) fill.style.background = '#e89840';
     else fill.style.background = '#d46040';
-    if (state.starvingTicks < 10) {
-      text.textContent = `${10 - state.starvingTicks}s until kitten dies`;
+    if (cooldown > 0) {
+      text.textContent = `⚠️ ${Math.ceil(cooldown / 5)}s until next death`;
     } else {
-      text.textContent = `⚠️ ${5 - cur}s until next death`;
+      text.textContent = '😿 Kittens are starving!';
     }
   } else {
     bar.classList.add('hidden');
@@ -481,17 +962,31 @@ function updateHutProgress() {
 }
 
 const RESOURCE_TIER = {
-  catnip:0, wood:0, science:0,
+  catnip:0, wood:0,
   minerals:1, coal:1,
-  iron:2,
-  beam:3, slab:3
+  iron:2, titanium:2, gold:2,
+  science:3, culture:3, faith:3,
+  beam:4, slab:4, plate:4,
+  steel:5,
+  gear:6, scaffold:6, parchment:6,
+  manuscript:7
 };
 
 function isResourceUnlocked(id) {
+  const res = state.resources[id];
+  if (res && res.unlocked) return true;
   switch (id) {
     case 'minerals': case 'coal': return state.techs.mining;
     case 'iron': return state.techs.metalworking;
-    case 'beam': case 'slab': return state.buildings.workshop > 0;
+    case 'titanium': return state.techs.navigation;
+    case 'gold': return state.techs.currency;
+    case 'science': return state.buildings.library > 0 || state.techs.calendar;
+    case 'culture': return state.buildings.amphitheatre > 0;
+    case 'faith': return state.buildings.chapel > 0 || state.buildings.temple > 0;
+    case 'beam': case 'slab': case 'plate': return state.buildings.workshop > 0;
+    case 'steel': case 'gear': return state.techs.metalworking;
+    case 'scaffold': return state.buildings.workshop > 0;
+    case 'parchment': case 'manuscript': return state.buildings.workshop > 0;
     default: return true;
   }
 }
@@ -500,14 +995,11 @@ function renderResourceBar() {
   const container = document.getElementById('resources-scroll');
   const scrollLeft = container.scrollLeft;
   container.innerHTML = '';
-  const prod = getResourceProduction();
-  const order = Object.keys(RESOURCE_TIER).filter(isResourceUnlocked).sort((a,b) => RESOURCE_TIER[a] - RESOURCE_TIER[b]);
+  const order = Object.keys(RESOURCE_TIER).filter(id => state.resources[id]?.unlocked || isResourceUnlocked(id)).sort((a,b) => RESOURCE_TIER[a] - RESOURCE_TIER[b]);
   for (const id of order) {
     const r = state.resources[id];
     const cfg = R[id];
-    const delta = id === 'catnip'
-      ? prod.catnip - getCatnipConsumption()
-      : prod[id] || 0;
+    const delta = r.perTickCached || 0;
 
     const prev = prevAmounts[id] ?? r.amount;
     let cls = 'res-item';
@@ -657,10 +1149,12 @@ function renderVillageTab(panel) {
 
 function jobProdBonus(jId) {
   const prod = getResourceProduction();
-  const map = { farmer:'catnip', woodcutter:'wood', miner:'minerals', scholar:'science' };
+  const map = { farmer:'catnip', woodcutter:'wood', miner:'minerals', scholar:'science', priest:'faith', engineer:'craft' };
   const res = map[jId];
+  if (res === 'craft') return 'auto';
   const count = state.jobs[jId] || 1;
-  return (prod[res] / count).toFixed(2);
+  const total = prod[res] || 0;
+  return (total / count).toFixed(3);
 }
 
 function renderBuildTab(panel) {
@@ -724,6 +1218,7 @@ function buildBuilding(bId) {
 }
 
 function applyBuildingEffects(bId) {
+  markEffectsDirty();
   switch (bId) {
     case 'hut':
       state.kittens.max++;
@@ -737,13 +1232,29 @@ function applyBuildingEffects(bId) {
     case 'workshop':
       state.craftsUnlocked = true;
       break;
-    case 'mine':
+    case 'loghouse':
+      state.kittens.max += 2;
+      break;
+    case 'mansion':
+      state.kittens.max += 4;
       break;
     case 'library':
+      break;
+    case 'mine':
       break;
     case 'smelter':
       break;
     case 'field':
+      break;
+    case 'warehouse':
+    case 'pasture':
+    case 'academy':
+    case 'amphitheatre':
+    case 'chapel':
+    case 'temple':
+    case 'mint':
+    case 'harbor':
+    case 'factory':
       break;
   }
 }
@@ -796,6 +1307,7 @@ function researchTech(tId) {
 }
 
 function applyTechEffects(tId) {
+  markEffectsDirty();
   switch (tId) {
     case 'mining':
       state.unlockedJobs.miner = true;
@@ -803,6 +1315,12 @@ function applyTechEffects(tId) {
     case 'calendar':
       state.seasonTick = 0;
       state.season = 0;
+      break;
+    case 'construction':
+      state.unlockedJobs.engineer = true;
+      break;
+    case 'theology':
+      state.unlockedJobs.priest = true;
       break;
   }
 }
@@ -835,13 +1353,16 @@ function renderCraftTab(panel) {
   let html = '';
   for (const [cId, c] of Object.entries(CRAFTS)) {
     const affordable = canAfford(c.inputs);
-    const hasRoom = state.resources[c.output].amount < state.resources[c.output].cap;
+    const hasRoom = state.resources[c.output]?.amount < state.resources[c.output]?.cap;
+    const ratio = 1 + getEffect(cId + 'CraftRatio');
+    const showBonus = ratio > 1;
 
     html += `<div class="craft-card">
       <span class="c-icon">${c.icon}</span>
       <div class="c-info">
         <div class="c-name">${c.name}</div>
         <div class="c-cost">${renderCost(c.inputs)}</div>
+        ${showBonus ? `<div class="c-bonus">×${ratio.toFixed(1)} output</div>` : ''}
       </div>
       <button class="craft-btn" data-craft="${cId}" ${!affordable || !hasRoom ? 'disabled' : ''}>
         Craft
@@ -861,15 +1382,92 @@ function renderCraftTab(panel) {
 function doCraft(cId) {
   const c = CRAFTS[cId];
   if (!canAfford(c.inputs)) return;
-  if (state.resources[c.output].amount >= state.resources[c.output].cap) return;
+  const res = state.resources[c.output];
+  if (res && res.amount >= res.cap) return;
   spend(c.inputs);
-  state.resources[c.output].amount += c.outputQty;
-  notify(`🔨 Crafted ${c.name}!`, 'success');
+  const ratio = 1 + getEffect(cId + 'CraftRatio');
+  const qty = Math.round(c.outputQty * ratio * 100) / 100;
+  if (res) res.amount += qty;
+  notify(`🔨 Crafted ${c.name} ×${qty.toFixed(1)}!`, 'success');
   updateUI();
 }
 
+function isUpgradeLocked(uId) {
+  for (const [id, u] of Object.entries(UPGRADES)) {
+    if (u.unlocks?.upgrades?.includes(uId) && !state.upgrades[id]) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function renderUpgradeTab(panel) {
-  panel.innerHTML = '<div class="upgrade-placeholder">🔧 Workshop upgrades coming soon!</div>';
+  let html = '';
+  for (const uId of UPGRADE_ORDER) {
+    const u = UPGRADES[uId];
+    const researched = state.upgrades[uId];
+    const affordable = canAffordPriceList(u.prices);
+    const isLocked = !researched && isUpgradeLocked(uId);
+
+    if (researched) {
+      html += `<div class="upgrade-card researched">
+        <span class="u-icon">${u.icon}</span>
+        <div class="u-info">
+          <div class="u-name">${u.name} <span class="u-researched">✅</span></div>
+          <div class="u-desc">${u.desc}</div>
+        </div>
+      </div>`;
+    } else {
+      let status = '';
+      if (isLocked) status = '<span class="u-status locked">🔒 Locked</span>';
+
+      html += `<div class="upgrade-card ${!affordable || isLocked ? 'disabled' : ''}">
+        <span class="u-icon">${u.icon}</span>
+        <div class="u-info">
+          <div class="u-name">${u.name}</div>
+          <div class="u-desc">${u.desc}</div>
+          <div class="u-cost">${renderPriceList(u.prices)}</div>
+          ${status}
+        </div>
+        <button class="upgrade-btn" data-upgrade="${uId}" ${!affordable || isLocked ? 'disabled' : ''}>
+          Research
+        </button>
+      </div>`;
+    }
+  }
+  panel.innerHTML = html;
+
+  panel.querySelectorAll('.upgrade-btn:not([disabled])').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const uId = btn.dataset.upgrade;
+      purchaseUpgrade(uId);
+    });
+  });
+}
+
+function renderPriceList(prices) {
+  return prices.map(p => {
+    const have = state.resources[p.name]?.amount ?? 0;
+    const cls = have >= p.val ? 'met' : 'unmet';
+    const icon = R[p.name]?.icon || '';
+    return `<span class="cost-item ${cls}">${icon} ${fmt(p.val)}</span>`;
+  }).join(' ');
+}
+
+function purchaseUpgrade(uId) {
+  const u = UPGRADES[uId];
+  if (state.upgrades[uId]) return;
+
+  if (isUpgradeLocked(uId)) return;
+
+  if (!canAffordPriceList(u.prices)) return;
+
+  spendPriceList(u.prices);
+  state.upgrades[uId] = true;
+  markEffectsDirty();
+
+  notify(`🔧 Researched ${u.name}!`, 'success');
+  updateUI();
 }
 
 // ============================
