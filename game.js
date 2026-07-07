@@ -78,11 +78,11 @@ const B = {
 const B_ORDER = ['field','hut','barn','mine','workshop','library','smelter'];
 
 const TECHS = {
-  calendar:{ name:'Calendar', cost:30, icon:'📅', unlocks:'Seasons cycle', desc:'Understanding the seasons.', prereq:null },
-  agriculture:{ name:'Agriculture', cost:100, icon:'🌾', unlocks:'Barn', desc:'Farming techniques.', prereq:'calendar' },
-  mining:{ name:'Mining', cost:500, icon:'⛏️', unlocks:'Miner, Mine, Workshop', desc:'Extract minerals.', prereq:'agriculture' },
-  writing:{ name:'Writing', cost:1250, icon:'✍️', unlocks:'Library, Scholar', desc:'Record knowledge.', prereq:'mining' },
-  metalworking:{ name:'Metalworking', cost:800, icon:'⚒️', unlocks:'Smelter, Iron', desc:'Smelt iron.', prereq:'mining' }
+  calendar:{ name:'Calendar', cost:10, icon:'📅', unlocks:'Seasons cycle', desc:'Understanding the seasons.', prereq:null },
+  agriculture:{ name:'Agriculture', cost:30, icon:'🌾', unlocks:'Barn', desc:'Farming techniques.', prereq:'calendar' },
+  mining:{ name:'Mining', cost:120, icon:'⛏️', unlocks:'Miner, Mine, Workshop', desc:'Extract minerals.', prereq:'agriculture' },
+  writing:{ name:'Writing', cost:300, icon:'✍️', unlocks:'Library, Scholar', desc:'Record knowledge.', prereq:'mining' },
+  metalworking:{ name:'Metalworking', cost:200, icon:'⚒️', unlocks:'Smelter, Iron', desc:'Smelt iron.', prereq:'mining' }
 };
 
 const T_ORDER = ['calendar','agriculture','mining','writing','metalworking'];
@@ -113,7 +113,8 @@ function createState() {
     tick:0,
     tutorial:{ step:0, active:true, completed:false },
     totalCatnipHarvested:0,
-    starvingWarned:false,
+    hutProgress:[],
+    starvingTicks:0,
     catnipLowWarned:false,
     winterWarned:false,
     lastTap:0,
@@ -183,7 +184,7 @@ function getResourceProduction() {
     if (Math.random() < 0.05) prod.coal += 0.5;
   }
 
-  prod.science = sc * (0.1 + lb * 0.1);
+  prod.science = (state.kittens.current * 0.05) + (wc * 0.05) + (sc * (0.1 + lb * 0.1));
 
   if (sm > 0) {
     const ironRate = sm * 0.1;
@@ -224,13 +225,31 @@ function tick() {
     r.amount = Math.max(0, Math.min(r.amount, r.cap));
   }
 
-  if (state.resources.catnip.amount === 0 && consume > 0) {
-    if (!state.starvingWarned) {
-      state.starvingWarned = true;
-      notify('⚠️ The village is starving! Build more fields!', 'warning');
+  // Hut migration: mỗi 5 ticks 1 mèo đến
+  for (let i = 0; i < state.hutProgress.length; i++) {
+    if (state.hutProgress[i] > 0) {
+      state.hutProgress[i]--;
+      if (state.hutProgress[i] === 0 && state.kittens.current < state.kittens.max) {
+        state.kittens.current++;
+        notify('🐱 A new kitten has arrived!', 'success');
+      }
     }
-  } else if (state.resources.catnip.amount > consume * 3) {
-    state.starvingWarned = false;
+  }
+
+  // Starvation
+  if (state.resources.catnip.amount <= 0 && consume > 0) {
+    state.starvingTicks++;
+    if (state.starvingTicks === 10) {
+      notify('😿 Kittens are starving! Lost 1 kitten.', 'warning');
+      killKitten();
+    } else if (state.starvingTicks > 10 && (state.starvingTicks - 10) % 5 === 0) {
+      if (state.kittens.current > 0) {
+        notify('😿 A kitten has died from starvation.', 'warning');
+        killKitten();
+      }
+    }
+  } else {
+    state.starvingTicks = 0;
   }
 
   if (prod.catnip < consume * 0.5 && state.tick > 20) {
@@ -301,6 +320,14 @@ function renderMap() {
           el.appendChild(s2);
         }, 100);
       }
+      if (id === 'hut' && i < state.hutProgress.length) {
+        const p = state.hutProgress[i];
+        const pct = p === 0 ? 100 : ((5 - p) / 5) * 100;
+        const bar = document.createElement('div');
+        bar.className = 'hut-progress';
+        bar.innerHTML = `<div class="hut-progress-fill" style="width:${pct}%"></div>`;
+        el.appendChild(bar);
+      }
       layer.appendChild(el);
       requestAnimationFrame(() => el.classList.add('visible'));
     }
@@ -347,11 +374,48 @@ let prevAmounts = {};
 
 function updateUI() {
   renderResourceBar();
+  renderStarvationBar();
+  updateHutProgress();
   const activeTab = document.querySelector('.tab-panel.active');
   if (activeTab) {
     const tabId = activeTab.id.replace('tab-', '');
     renderTab(tabId);
   }
+}
+
+function renderStarvationBar() {
+  const bar = document.getElementById('starvation-bar');
+  const fill = bar.querySelector('.starvation-fill');
+  const text = bar.querySelector('.starvation-text');
+  if (state.starvingTicks > 0 && state.kittens.current > 0) {
+    bar.classList.remove('hidden');
+    const max = state.starvingTicks < 10 ? 10 : 5;
+    const cur = state.starvingTicks < 10 ? state.starvingTicks : (state.starvingTicks - 10) % 5;
+    const pct = Math.min((cur / max) * 100, 100);
+    fill.style.width = pct + '%';
+    if (pct < 40) fill.style.background = '#e8c84a';
+    else if (pct < 70) fill.style.background = '#e89840';
+    else fill.style.background = '#d46040';
+    if (state.starvingTicks < 10) {
+      text.textContent = `${10 - state.starvingTicks}s until kitten dies`;
+    } else {
+      text.textContent = `⚠️ ${5 - cur}s until next death`;
+    }
+  } else {
+    bar.classList.add('hidden');
+    fill.style.width = '0%';
+  }
+}
+
+function updateHutProgress() {
+  const fills = document.querySelectorAll('.hut-progress-fill');
+  fills.forEach((fill, i) => {
+    if (i < state.hutProgress.length) {
+      const p = state.hutProgress[i];
+      const pct = p === 0 ? 100 : ((5 - p) / 5) * 100;
+      fill.style.width = pct + '%';
+    }
+  });
 }
 
 function renderResourceBar() {
@@ -533,6 +597,7 @@ function applyBuildingEffects(bId) {
   switch (bId) {
     case 'hut':
       state.kittens.max++;
+      state.hutProgress.push(5);
       break;
     case 'barn':
       for (const res of ['catnip','wood','minerals']) {
@@ -612,6 +677,26 @@ function applyTechEffects(tId) {
       state.seasonTick = 0;
       state.season = 0;
       break;
+  }
+}
+
+function killKitten() {
+  if (state.kittens.current <= 0) return;
+  state.kittens.current--;
+  for (let i = JOB_ORDER.length - 1; i >= 0; i--) {
+    const jId = JOB_ORDER[i];
+    if (state.jobs[jId] > 0) {
+      state.jobs[jId]--;
+      break;
+    }
+  }
+  if (state.kittens.current <= 0) {
+    state.gameOver = true;
+    const overlay = document.getElementById('tutorial-overlay');
+    overlay.classList.remove('hidden');
+    document.getElementById('tutorial-text').innerHTML = '<b>💀 Game Over</b><br><br>Your village has perished.<br>All kittens are gone.<br><br>Refresh the page to start anew.';
+    document.getElementById('tutorial-btn').textContent = '🔄 Restart';
+    document.getElementById('tutorial-btn').onclick = () => location.reload();
   }
 }
 

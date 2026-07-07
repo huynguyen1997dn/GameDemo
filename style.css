@@ -35,6 +35,44 @@ html, body {
   z-index: 10;
 }
 
+/* ===== STARVATION BAR ===== */
+#starvation-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: rgba(200,80,60,0.06);
+  font-size: 11px;
+  transition: all 0.3s;
+  z-index: 10;
+  border-bottom: 1px solid rgba(200,80,60,0.08);
+}
+#starvation-bar.hidden { display: none; }
+.starvation-icon { font-size: 14px; flex-shrink: 0; }
+.starvation-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(200,80,60,0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 40px;
+}
+.starvation-fill {
+  display: block;
+  height: 100%;
+  width: 0%;
+  border-radius: 3px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+.starvation-text {
+  font-size: 10px;
+  color: #c06040;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .scroll-horizontal {
   display: flex;
   gap: 4px;
@@ -242,6 +280,22 @@ html, body {
 @keyframes smoke-rise {
   0% { opacity: 0.6; transform: translateX(-50%) translateY(0) scale(1); }
   100% { opacity: 0; transform: translateX(-50%) translateY(-24px) scale(2); }
+}
+
+/* Hut migration progress */
+.hut-progress {
+  width: 40px;
+  height: 4px;
+  background: rgba(0,0,0,0.1);
+  border-radius: 3px;
+  margin-top: 2px;
+  overflow: hidden;
+}
+.hut-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8bc88a, #5aaf5a);
+  border-radius: 3px;
+  transition: width 0.3s ease;
 }
 
 /* ===== CATS ===== */
