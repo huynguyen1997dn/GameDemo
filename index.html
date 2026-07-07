@@ -1,69 +1,69 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#f5e6d3">
-  <title>Meow Hamlet: Idle Cat Village</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#f5e6d3">
+    <title>Meow Hamlet: Idle Cat Village</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="app">
+<div id="app">
     <header id="resource-bar">
-      <div id="resources-scroll" class="scroll-horizontal"></div>
+        <div id="resources-scroll" class="scroll-horizontal"></div>
     </header>
 
     <div id="starvation-bar" class="hidden">
-      <span class="starvation-icon">🍽️</span>
-      <span class="starvation-track"><span class="starvation-fill"></span></span>
-      <span class="starvation-text"></span>
+        <span class="starvation-icon">🍽️</span>
+        <span class="starvation-track"><span class="starvation-fill"></span></span>
+        <span class="starvation-text"></span>
     </div>
 
     <div id="season-bar" class="hidden">
-      <span id="season-icon"></span>
-      <span id="season-name"></span>
-      <span id="season-effect"></span>
-      <span class="season-track"><span id="season-fill" class="season-fill"></span></span>
-      <span id="season-progress"></span>
+        <span id="season-icon"></span>
+        <span id="season-name"></span>
+        <span id="season-effect"></span>
+        <span class="season-track"><span id="season-fill" class="season-fill"></span></span>
+        <span id="season-progress"></span>
     </div>
 
     <main id="map-area">
-      <div id="map-container">
-        <div id="season-overlay"></div>
-        <div id="map-terrain"></div>
-        <div id="buildings-layer"></div>
-        <div id="cats-layer"></div>
-        <div id="tap-fx-layer"></div>
-      </div>
-      <div id="tap-hint">Tap the village for +1 🌿</div>
+        <div id="map-container">
+            <div id="season-overlay"></div>
+            <div id="map-terrain"></div>
+            <div id="buildings-layer"></div>
+            <div id="cats-layer"></div>
+            <div id="tap-fx-layer"></div>
+        </div>
+        <div id="tap-hint">Bấm vào bãi cỏ để kiếm +1 🌿</div>
     </main>
 
     <nav id="tab-nav">
-      <button class="tab-btn active" data-tab="village">Village</button>
-      <button class="tab-btn" data-tab="build">Build</button>
-      <button class="tab-btn" data-tab="research">Research</button>
-      <button class="tab-btn" data-tab="craft">Craft</button>
-      <button class="tab-btn" data-tab="upgrade">Upgrade</button>
+        <button class="tab-btn active" data-tab="village">Village</button>
+        <button class="tab-btn" data-tab="build">Build</button>
+        <button class="tab-btn" data-tab="research">Research</button>
+        <button class="tab-btn" data-tab="craft">Craft</button>
+        <button class="tab-btn" data-tab="upgrade">Upgrade</button>
     </nav>
 
     <section id="tab-content">
-      <div id="tab-village" class="tab-panel active"></div>
-      <div id="tab-build" class="tab-panel"></div>
-      <div id="tab-research" class="tab-panel"></div>
-      <div id="tab-craft" class="tab-panel"></div>
-      <div id="tab-upgrade" class="tab-panel"></div>
+        <div id="tab-village" class="tab-panel active"></div>
+        <div id="tab-build" class="tab-panel"></div>
+        <div id="tab-research" class="tab-panel"></div>
+        <div id="tab-craft" class="tab-panel"></div>
+        <div id="tab-upgrade" class="tab-panel"></div>
     </section>
 
     <div id="tutorial-overlay" class="hidden">
-      <div id="tutorial-box">
-        <div id="tutorial-text"></div>
-        <button id="tutorial-btn">Next</button>
-      </div>
+        <div id="tutorial-box">
+            <div id="tutorial-text"></div>
+            <button id="tutorial-btn">Tiếp tục</button>
+        </div>
     </div>
 
     <div id="tooltip" class="hidden"></div>
     <div id="notification-container"></div>
-  </div>
-  <script src="game.js"></script>
+</div>
+<script src="game.js"></script>
 </body>
 </html>
