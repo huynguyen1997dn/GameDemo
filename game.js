@@ -1108,13 +1108,21 @@ function renderVillageTab(panel) {
     for (const jId of JOB_ORDER) {
         const job = JOBS[jId];
         const count = state.jobs[jId];
-        const unlocked = state.unlockedJobs[jId];
+
+        // Tự động mở khóa Scholar ngay khi số lượng Library > 0
+        let unlocked = state.unlockedJobs[jId];
+        if (jId === 'scholar' && state.buildings.library > 0) {
+            unlocked = true;
+        }
 
         if (!unlocked) {
+            // Hiển thị thông báo yêu cầu chính xác thay vì "Chưa mở khóa công nghệ" chung chung
+            const lockMsg = jId === 'scholar' ? 'Yêu cầu xây Library 📚' : 'Chưa mở khóa công nghệ';
+
             html += `<div class="job-row job-locked">
         <span class="job-icon">🔒</span>
         <span class="job-name">${job.name}</span>
-        <span class="job-produces">Chưa mở khóa công nghệ</span>
+        <span class="job-produces">${lockMsg}</span>
       </div>`;
             continue;
         }
