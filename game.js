@@ -46,10 +46,10 @@ const B = {
     },
     hut:{
         name:'Hut', icon:'🏠', cost:{ wood:5 },
-        effect:'+1 max kitten',
-        desc:'Túp lều nhỏ bằng gỗ. Thêm chỗ ở cho 1 chú mèo mới.',
+        effect:'+2 max kitten',
+        desc:'Túp lều nhỏ bằng gỗ. Thêm chỗ ở cho 2 chú mèo mới.',
         unlockTech:null, color:'type-hut', maxCount:10,
-        effects:{ maxKittens:1 },
+        effects:{ maxKittens:2 },
         mapPositions:[[5,45],[14,52],[8,62],[22,55],[18,70],[30,50],[40,75],[55,55],[65,50],[70,65]]
     },
     barn:{
@@ -70,10 +70,10 @@ const B = {
     },
     mine:{
         name:'Mine', icon:'⛰️', cost:{ wood:15, minerals:10 },
-        effect:'+0.2 minerals/s',
-        desc:'Mỏ đá sâu. Giúp tăng mạnh tốc độ khai khoáng.',
+        effect:'+20% hiệu suất thợ mỏ',
+        desc:'Mỏ đá sâu. Tăng hiệu suất khai khoáng cho thợ mỏ.',
         unlockTech:'mining', color:'type-mine', maxCount:5,
-        effects:{ mineralsPerTickBase:0.2, mineralsRatio:0.2 },
+        effects:{ mineralsRatio:0.2 },
         mapPositions:[[72,30],[82,38],[85,50],[88,60],[80,70]]
     },
     workshop:{
@@ -110,10 +110,10 @@ const B = {
     },
     loghouse:{
         name:'Log House', icon:'🪵', cost:{ wood:40, minerals:10 },
-        effect:'+2 max kittens',
+        effect:'+4 max kittens',
         desc:'Nhà gỗ kiên cố, chứa được nhiều mèo hơn.',
         unlockTech:'construction', color:'type-loghouse', maxCount:5,
-        effects:{ maxKittens:2 },
+        effects:{ maxKittens:4 },
         mapPositions:[[10,48],[22,50],[35,52],[48,48],[58,52]]
     },
     academy:{
@@ -158,10 +158,10 @@ const B = {
     },
     mansion:{
         name:'Mansion', icon:'🏰', cost:{ wood:100, minerals:60, slab:15 },
-        effect:'+4 max kittens',
+        effect:'+8 max kittens',
         desc:'Biệt thự xa hoa lộng lẫy cho giới quý tộc mèo.',
         unlockTech:'engineering', color:'type-mansion', maxCount:5,
-        effects:{ maxKittens:4 },
+        effects:{ maxKittens:8 },
         mapPositions:[[65,42],[75,45],[82,50],[88,55],[75,58]]
     },
     harbor:{
@@ -385,7 +385,7 @@ function createState() {
         season:0,
         seasonTick:0,
         seasonLength:45,
-        kittens:{ current:0, max:5 },
+        kittens:{ current:0, max:0 },
         happiness:100,
         tick:0,
         tutorial:{ step:0, active:true, completed:false },
@@ -397,7 +397,11 @@ function createState() {
         deathTimeout:0,
         catnipLowWarned:false,
         winterWarned:false,
-        gameOver:false
+        year:0,
+        gameOver:false,
+        gameSpeed:1,
+        happinessPenalty:0,
+        lastSaveTick:0
     };
     for (const id of R_ORDER) {
         s.resources[id] = createResource(id);
@@ -514,6 +518,7 @@ function calcHappiness() {
         happiness -= 0.02 * (kittens - 5);
     }
     happiness += getEffect('happinessBonus');
+    happiness -= state.happinessPenalty;
     happiness = Math.max(0.25, happiness);
     return happiness;
 }
@@ -701,9 +706,33 @@ function applyStorageRatio(resName, baseMax) {
     return baseMax * ratio;
 }
 
-function tick() {
-    if (state.gameOver) return;
+// ============================
+// NOTIFICATION SUPPRESSION
+// ============================
+let _suppressNotif = false;
+let notifTimers = [];
+
+function notify(text, type = 'info') {
+    if (_suppressNotif) return;
+    const container = document.getElementById('notification-container');
+    const el = document.createElement('div');
+    el.className = `notification ${type}`;
+    el.textContent = text;
+    container.appendChild(el);
+    const t = setTimeout(() => { el.remove(); }, 3500);
+    notifTimers.push(t);
+}
+
+// ============================
+// GAME TICK
+// ============================
+function processTick() {
     state.tick++;
+
+    // Happiness penalty decay
+    if (state.happinessPenalty > 0) {
+        state.happinessPenalty = Math.max(0, state.happinessPenalty - 0.001);
+    }
 
     // Recalculate happiness
     state.happiness = Math.round(calcHappiness() * 100);
@@ -741,6 +770,7 @@ function tick() {
                 } else {
                     notify('🐱 Một chú mèo mới đã chuyển đến làng!', 'success');
                 }
+                state.hutProgress[i] = 5;
             }
         }
     }
@@ -780,26 +810,32 @@ function tick() {
             notify('❄️ Mùa Đông khắc nghiệt: Sản lượng Cỏ giảm mạnh & Mèo ăn nhiều hơn!', 'warning');
             state.winterWarned = true;
         }
+        if (state.season === 0) {
+            state.year++;
+            notify(`🎉 Năm thứ ${state.year} đã đến!`, 'success');
+        }
+    }
+}
+
+function tick() {
+    if (state.gameOver) return;
+
+    const speed = state.gameSpeed;
+    if (speed === 0) {
+        updateUI();
+        return;
     }
 
+    for (let i = 0; i < speed; i++) {
+        _suppressNotif = (i < speed - 1);
+        processTick();
+    }
+    _suppressNotif = false;
+
+    autoSave();
     updateCats();
     updateUI();
     checkTutorial();
-}
-
-// ============================
-// NOTIFICATIONS
-// ============================
-let notifTimers = [];
-
-function notify(text, type = 'info') {
-    const container = document.getElementById('notification-container');
-    const el = document.createElement('div');
-    el.className = `notification ${type}`;
-    el.textContent = text;
-    container.appendChild(el);
-    const t = setTimeout(() => { el.remove(); }, 3500);
-    notifTimers.push(t);
 }
 
 // ============================
@@ -913,6 +949,7 @@ function renderSeasonInfo() {
     document.getElementById('season-icon').textContent = icons[state.season];
     document.getElementById('season-name').textContent = names[state.season];
     document.getElementById('season-effect').textContent = effects[state.season];
+    document.getElementById('season-year').textContent = `📅 Năm ${state.year + 1}`;
 
     const pct = (state.seasonTick / state.seasonLength) * 100;
     document.getElementById('season-fill').style.width = Math.min(pct, 100) + '%';
@@ -1246,7 +1283,7 @@ function applyBuildingEffects(bId) {
     markEffectsDirty();
     switch (bId) {
         case 'hut':
-            state.kittens.max++;
+            state.kittens.max += 2;
             state.hutProgress.push(5);
             break;
         case 'barn':
@@ -1258,10 +1295,10 @@ function applyBuildingEffects(bId) {
             state.craftsUnlocked = true;
             break;
         case 'loghouse':
-            state.kittens.max += 2;
+            state.kittens.max += 4;
             break;
         case 'mansion':
-            state.kittens.max += 4;
+            state.kittens.max += 8;
             break;
         case 'library':
             break;
@@ -1350,6 +1387,7 @@ function applyTechEffects(tId) {
 function killKitten() {
     if (state.kittens.current <= 0) return;
     state.kittens.current--;
+    state.happinessPenalty = Math.min(0.5, state.happinessPenalty + 0.1);
     for (let i = JOB_ORDER.length - 1; i >= 0; i--) {
         const jId = JOB_ORDER[i];
         if (state.jobs[jId] > 0) {
@@ -1357,14 +1395,10 @@ function killKitten() {
             break;
         }
     }
-    if (state.kittens.current <= 0) {
-        state.gameOver = true;
-        const overlay = document.getElementById('tutorial-overlay');
-        overlay.classList.remove('hidden');
-        document.getElementById('tutorial-text').innerHTML = '<b>💀 TRÒ CHƠI KẾT THÚC</b><br><br>Ngôi làng của bạn đã lụi tàn hoàn toàn do đói khát.<br>Tất cả bé mèo đã rời bỏ thế gian.<br><br>Hãy tải lại trang (F5) để bắt đầu một kiếp mèo mới kiên cường hơn!';
-        document.getElementById('tutorial-btn').textContent = '🔄 Chơi lại';
-        document.getElementById('tutorial-btn').onclick = () => location.reload();
+    for (let i = 0; i < state.hutProgress.length; i++) {
+        state.hutProgress[i] = 5;
     }
+    notify('🔄 Một chú mèo đã ra đi. Làng đang chuẩn bị đón mèo mới...', 'warning');
 }
 
 function renderCraftTab(panel) {
@@ -1557,6 +1591,17 @@ function switchTab(tabId) {
 }
 
 // ============================
+// SPEED CONTROL
+// ============================
+function setGameSpeed(speed) {
+    state.gameSpeed = speed;
+    document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+    const btn = document.querySelector(`.speed-btn[data-speed="${speed}"]`);
+    if (btn) btn.classList.add('active');
+    updateUI();
+}
+
+// ============================
 // FORMATTING
 // ============================
 function fmt(n) {
@@ -1637,6 +1682,66 @@ function initEvents() {
     document.addEventListener('mouseout', (e) => {
         if (e.target.closest('.build-btn, .research-btn, .craft-btn, .job-btn')) hideTooltip();
     });
+
+    // Speed buttons
+    document.querySelectorAll('.speed-btn[data-speed]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const speed = parseInt(btn.dataset.speed);
+            if (!isNaN(speed)) setGameSpeed(speed);
+        });
+    });
+
+    // Save button
+    const saveBtn = document.getElementById('save-btn');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => {
+            saveGame();
+            notify('💾 Đã lưu game thành công!', 'success');
+        });
+    }
+
+    // Load button
+    const loadBtn = document.getElementById('load-btn');
+    if (loadBtn) {
+        loadBtn.addEventListener('click', () => {
+            if (confirm('Tải lại game từ lần lưu trước? Tiến trình hiện tại sẽ bị mất.')) {
+                loadGame();
+                renderMap();
+                updateUI();
+                notify('📂 Đã tải game thành công!', 'success');
+            }
+        });
+    }
+
+    // New Game button
+    const newGameBtn = document.getElementById('newgame-btn');
+    if (newGameBtn) {
+        newGameBtn.addEventListener('click', () => {
+            if (confirm('Bắt đầu game mới? Toàn bộ dữ liệu cũ sẽ bị xóa!')) {
+                deleteSave();
+                state = createState();
+                markEffectsDirty();
+                state.tutorial.active = true;
+                state.tutorial.step = 0;
+                state.tutorial.completed = false;
+                lastShownStep = -1;
+                prevAmounts = {};
+                notifTimers.forEach(t => clearTimeout(t));
+                notifTimers = [];
+                document.getElementById('notification-container').innerHTML = '';
+                document.getElementById('tutorial-overlay').classList.add('hidden');
+                renderMap();
+                updateUI();
+                switchTab('village');
+                setTimeout(() => checkTutorial(), 500);
+                notify('🆕 Đã bắt đầu game mới!', 'success');
+            }
+        });
+    }
+
+    window.addEventListener('beforeunload', () => {
+        saveGame();
+    });
 }
 
 function showTooltip(e, text) {
@@ -1654,14 +1759,94 @@ function hideTooltip() {
 }
 
 // ============================
+// SAVE / LOAD
+// ============================
+function getSaveData() {
+    return {
+        resources: state.resources,
+        buildings: state.buildings,
+        jobs: state.jobs,
+        unlockedJobs: state.unlockedJobs,
+        techs: state.techs,
+        upgrades: state.upgrades,
+        craftsUnlocked: state.craftsUnlocked,
+        season: state.season,
+        seasonTick: state.seasonTick,
+        seasonLength: state.seasonLength,
+        kittens: state.kittens,
+        tick: state.tick,
+        totalCatnipHarvested: state.totalCatnipHarvested,
+        totalTaps: state.totalTaps,
+        tradeCount: state.tradeCount,
+        hutProgress: state.hutProgress,
+        starvingTicks: state.starvingTicks,
+        deathTimeout: state.deathTimeout,
+        catnipLowWarned: state.catnipLowWarned,
+        winterWarned: state.winterWarned,
+        gameOver: state.gameOver,
+        gameSpeed: state.gameSpeed,
+        happinessPenalty: state.happinessPenalty,
+        year: state.year,
+        tutorial: state.tutorial
+    };
+}
+
+function saveGame() {
+    try {
+        const data = getSaveData();
+        localStorage.setItem('meowHamletSave', JSON.stringify(data));
+        state.lastSaveTick = state.tick;
+    } catch (e) {
+        console.warn('Save failed:', e);
+    }
+}
+
+function loadGame() {
+    try {
+        const raw = localStorage.getItem('meowHamletSave');
+        if (!raw) return false;
+        const data = JSON.parse(raw);
+        for (const key of Object.keys(data)) {
+            if (key in state) {
+                state[key] = data[key];
+            }
+        }
+        if (state.tutorial?.completed) {
+            state.tutorial.active = false;
+        }
+        markEffectsDirty();
+        return true;
+    } catch (e) {
+        console.warn('Load failed:', e);
+        return false;
+    }
+}
+
+function deleteSave() {
+    localStorage.removeItem('meowHamletSave');
+}
+
+function autoSave() {
+    if (state.gameOver) return;
+    if (state.tick - state.lastSaveTick >= 30) {
+        saveGame();
+    }
+}
+
+// ============================
 // INIT
 // ============================
 function init() {
     state = createState();
+    const loaded = loadGame();
     initEvents();
+    setGameSpeed(state.gameSpeed || 1);
     renderMap();
     updateUI();
     switchTab('village');
+    if (loaded) {
+        notify('📂 Đã tải game từ lần trước!', 'success');
+    }
     setTimeout(() => checkTutorial(), 500);
     setInterval(tick, 1000);
 }

@@ -183,12 +183,62 @@ html, body {
     transition: width 0.3s ease;
 }
 
+.season-year {
+    font-size: 10px;
+    color: #8a7a5a;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-right: 2px;
+}
 #season-progress {
     font-size: 10px;
     color: #a08070;
     flex-shrink: 0;
     min-width: 28px;
     text-align: right;
+}
+
+/* ===== SPEED BAR ===== */
+#speed-bar {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 8px;
+    background: linear-gradient(135deg, #faf0e6, #f5e6d3);
+    border-bottom: 1px solid #e8d5c0;
+    z-index: 10;
+}
+.speed-btn {
+    width: 32px;
+    height: 28px;
+    border: 1px solid #d4c4b4;
+    border-radius: 6px;
+    background: #fffcf5;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-family: inherit;
+    color: #5a4a3a;
+    padding: 0;
+    line-height: 1;
+}
+.speed-btn:active { transform: scale(0.9); }
+.speed-btn.active {
+    background: #d4a574;
+    color: #fff;
+    border-color: #c49464;
+}
+.speed-spacer {
+    flex: 1;
+}
+.speed-btn.save-load-btn {
+    font-size: 14px;
+    width: 30px;
+    height: 26px;
 }
 
 /* ===== MAP AREA ===== */
