@@ -1296,9 +1296,11 @@ function applyBuildingEffects(bId) {
             break;
         case 'loghouse':
             state.kittens.max += 4;
+            state.hutProgress.push(5);
             break;
         case 'mansion':
             state.kittens.max += 8;
+            state.hutProgress.push(5);
             break;
         case 'library':
             break;
