@@ -144,19 +144,50 @@ html,body{
   align-items:center;gap:4px;
   transition:all .3s ease;
   flex-shrink:0;
+  position:relative;
 }
 .order-card.completed{
   border-color:var(--food-green);
   border-style:solid;
   background:linear-gradient(135deg,#E8FFF5,#D4F5E9);
-  animation:orderComplete .5s ease;
+  animation:orderComplete .6s ease;
+}
+.order-card.completed::after{
+  content:'✨';
+  position:absolute;top:-6px;right:-6px;
+  font-size:18px;
+  animation:sparkle .8s ease forwards;
+  pointer-events:none;
 }
 
 .order-dish{font-size:30px;line-height:1}
+.order-customer{font-size:16px;line-height:1}
 .order-name{font-size:11px;font-weight:700;color:var(--text-dark)}
 .order-ingredients{display:flex;gap:2px;font-size:15px}
 .order-check{font-size:18px;display:none}
 .order-card.completed .order-check{display:block}
+.order-timer-bar{
+  width:100%;height:4px;border-radius:2px;
+  background:rgba(0,0,0,0.08);overflow:hidden;
+  margin-top:2px;
+}
+.order-timer-fill{
+  height:100%;border-radius:2px;
+  background:var(--food-green);
+  transition:width 0.15s linear;
+}
+.order-timer-fill.warning{background:var(--food-yellow)}
+.order-timer-fill.danger{background:var(--food-red);animation:pulseDanger .5s ease infinite alternate}
+@keyframes pulseDanger{0%{opacity:1}100%{opacity:0.5}}
+.order-card.cancelled{
+  opacity:0.4;border-style:solid;border-color:var(--food-red);
+  animation:fadeCancel .4s ease forwards;
+}
+@keyframes fadeCancel{
+  0%{opacity:0.4;transform:scale(1)}
+  50%{opacity:0.6;transform:scale(1.05)}
+  100%{opacity:0.3;transform:scale(0.95)}
+}
 
 /* ============================================================
    STATIONS - Processing Zone
@@ -311,7 +342,7 @@ html,body{
 }
 
 .ingredient-chip{
-  width:52px;height:52px;
+  width:52px;height:62px;
   border-radius:14px;
   background:linear-gradient(135deg,#FFF9F0,var(--bg-primary));
   border:2px solid rgba(212,163,115,0.3);
@@ -319,15 +350,26 @@ html,body{
     0 3px 12px var(--shadow-clay),
     inset 0 -2px 4px rgba(141,91,76,0.08),
     inset 0 2px 4px rgba(255,255,255,0.6);
-  display:flex;align-items:center;justify-content:center;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
   font-size:26px;
   cursor:pointer;
   transition:all .15s ease;
   position:relative;
+  gap:1px;
 }
 .ingredient-chip:active{
   transform:scale(0.88) !important;
   box-shadow:0 1px 4px var(--shadow-clay);
+}
+.chip-label{
+  font-size:7px;font-weight:700;
+  color:var(--wood-dark);
+  line-height:1;
+  max-width:48px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-align:center;
 }
 .ingredient-chip .state-badge{
   position:absolute;bottom:-2px;right:-2px;
@@ -484,9 +526,15 @@ html,body{
    KEYFRAME ANIMATIONS
    ============================================================ */
 @keyframes orderComplete{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.08)}
-  100%{transform:scale(1)}
+  0%{transform:scale(1);box-shadow:none}
+  30%{transform:scale(1.12);box-shadow:0 0 16px rgba(42,157,143,0.5)}
+  60%{transform:scale(0.95)}
+  100%{transform:scale(1);box-shadow:0 0 0 rgba(42,157,143,0)}
+}
+@keyframes sparkle{
+  0%{opacity:0;transform:scale(0) rotate(0deg)}
+  50%{opacity:1;transform:scale(1.2) rotate(180deg)}
+  100%{opacity:0;transform:scale(0) rotate(360deg)}
 }
 @keyframes stationPulse{
   0%{box-shadow:0 0 0 0 rgba(255,183,3,0.3)}
@@ -550,6 +598,7 @@ html,body{
 
 .shake-anim{animation:shakeReject .4s ease}
 .glow-anim{animation:glowComplete .6s ease}
+.ingredient-bar.shake{animation:shakeReject .4s ease}
 
 /* Auto-assembly animations */
 .board-slot.merge-glow{
@@ -577,7 +626,7 @@ html,body{
    ============================================================ */
 @media(max-height:680px){
   .board-slot{width:48px;height:48px;font-size:24px}
-  .ingredient-chip{width:44px;height:44px;font-size:22px}
+  .ingredient-chip{width:44px;height:54px;font-size:22px}
   .station{min-height:78px;padding:6px 8px}
   .station-slot{width:44px;height:44px;font-size:24px}
   .order-card{min-width:100px;padding:8px}
@@ -675,11 +724,13 @@ const CFG = {
 const INGREDIENTS = {
   bun:       { id:'bun',       emoji:'🍞', name:'Vỏ Bánh',    chain:[] },
   lettuce:   { id:'lettuce',   emoji:'🥬', name:'Rau Xà Lách', chain:[] },
-  beef:      { id:'beef',      emoji:'🥩', name:'Thịt Bò',     chain:['cut','fry'], stations:{cut:'cut',fry:'fry'} },
-  cheese:    { id:'cheese',    emoji:'🧀', name:'Phô Mai',     chain:['cut'],       stations:{cut:'cut'} },
-  fries_raw: { id:'fries_raw', emoji:'🥔', name:'Khoai Tây',   chain:['cut','fry'], stations:{cut:'cut',fry:'fry'} },
-  chicken:   { id:'chicken',   emoji:'🍗', name:'Thịt Gà',     chain:['fry'],       stations:{fry:'fry'} },
-  cabbage:   { id:'cabbage',   emoji:'🥬', name:'Bắp Cải',     chain:['cut'],       stations:{cut:'cut'} },
+  beef:      { id:'beef',      emoji:'🥩', name:'Thịt Bò',     chain:['cut','fry'], stations:{cut:'cut',fry:'fry'}, processTime:{cut:2500,fry:3500} },
+  cheese:    { id:'cheese',    emoji:'🧀', name:'Phô Mai',     chain:['cut'],       stations:{cut:'cut'}, processTime:{cut:1500} },
+  fries_raw: { id:'fries_raw', emoji:'🥔', name:'Khoai Tây',   chain:['cut','fry'], stations:{cut:'cut',fry:'fry'}, processTime:{cut:2000,fry:3000} },
+  chicken:   { id:'chicken',   emoji:'🍗', name:'Thịt Gà',     chain:['fry'],       stations:{fry:'fry'}, processTime:{fry:2000} },
+  cabbage:   { id:'cabbage',   emoji:'🥬', name:'Bắp Cải',     chain:['cut'],       stations:{cut:'cut'}, processTime:{cut:1500} },
+  tomato:    { id:'tomato',    emoji:'🍅', name:'Cà Chua',     chain:[] },
+  egg:       { id:'egg',       emoji:'🥚', name:'Trứng',       chain:['fry'],       stations:{fry:'fry'}, processTime:{fry:1800} },
 };
 
 /* =============================================================
@@ -727,6 +778,39 @@ const RECIPES = {
       { ingredientId:'fries_raw', requiredState:'fry' },
     ]
   },
+  egg_sandwich: {
+    id:'egg_sandwich', dishEmoji:'🥪', name:'Bánh Trứng',
+    requirements:[
+      { ingredientId:'bun',  requiredState:null },
+      { ingredientId:'egg',  requiredState:'fry' },
+      { ingredientId:'lettuce', requiredState:null },
+    ]
+  },
+  veggie_burger: {
+    id:'veggie_burger', dishEmoji:'🍔', name:'Bánh Rau',
+    requirements:[
+      { ingredientId:'bun',     requiredState:null },
+      { ingredientId:'lettuce', requiredState:null },
+      { ingredientId:'cabbage', requiredState:'cut' },
+      { ingredientId:'tomato',  requiredState:null },
+    ]
+  },
+  beef_fries_meal: {
+    id:'beef_fries_meal', dishEmoji:'🍽️', name:'Bò Khoai',
+    requirements:[
+      { ingredientId:'beef',      requiredState:'fry' },
+      { ingredientId:'fries_raw', requiredState:'fry' },
+      { ingredientId:'cheese',    requiredState:'cut' },
+    ]
+  },
+  cheese_toast: {
+    id:'cheese_toast', dishEmoji:'🧀', name:'Bánh Phô Mai',
+    requirements:[
+      { ingredientId:'bun',    requiredState:null },
+      { ingredientId:'cheese', requiredState:'cut' },
+      { ingredientId:'tomato', requiredState:null },
+    ]
+  },
 };
 
 /* =============================================================
@@ -736,13 +820,13 @@ const LEVELS = [
   {
     id:1, name:'Tutorial 1',
     boardSlots:6,
-    stations:{cut:false, fry:false},
+    stations:{cut:0, fry:0},
     orders:[{recipeId:'simple_bun_lettuce', qty:1}],
     stacks:['bun', 'lettuce'],
     tutorial:{
       steps:[
-        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh từ ngăn kéo!' },
-        { target:'stack', hand:'bottom', msg:'Giờ chạm 🥬 Rau Xà Lách!' },
+        { target:'stack', chip:0, hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh từ ngăn kéo!' },
+        { target:'stack', chip:1, hand:'bottom', msg:'Giờ chạm 🥬 Rau Xà Lách!' },
         { target:'board', hand:'center', msg:'Cả hai nguyên liệu lên bàn → Đơn tự ghép! ✨' },
       ]
     },
@@ -750,38 +834,38 @@ const LEVELS = [
   {
     id:2, name:'Tutorial 2',
     boardSlots:6,
-    stations:{cut:false, fry:true},
+    stations:{cut:0, fry:1},
     orders:[{recipeId:'hamburger_chicken', qty:1}],
     stacks:[{id:'cabbage',state:'cut'}, 'chicken', 'bun'],
     tutorial:{
       steps:[
-        { target:'stack', hand:'bottom', msg:'Chạm 🍗 Thịt Gà từ ngăn kéo — cần qua Trạm Chiên!' },
+        { target:'stack', chip:1, hand:'bottom', msg:'Chạm 🍗 Thịt Gà từ ngăn kéo — cần qua Trạm Chiên!' },
         { target:'station-fry', hand:'center', msg:'Gà đang chiên 2s... Đợi hoàn tất!' },
-        { target:'stack', hand:'bottom', msg:'Bắp Cải ✂️ đã cắt sẵn — chạm lấy!' },
-        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh đặt lên bàn!' },
+        { target:'stack', chip:0, hand:'bottom', msg:'Bắp Cải ✂️ đã cắt sẵn — chạm lấy!' },
+        { target:'stack', chip:2, hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh đặt lên bàn!' },
       ]
     },
   },
   {
     id:3, name:'Tutorial 3',
     boardSlots:5,
-    stations:{cut:true, fry:true},
+    stations:{cut:1, fry:1},
     orders:[{recipeId:'hamburger_beef_lettuce', qty:1}],
     stacks:['beef', 'bun', 'lettuce'],
     tutorial:{
       steps:[
-        { target:'stack', hand:'bottom', msg:'Chạm 🥩 Thịt Bò từ ngăn kéo → vào Trạm Cắt!' },
+        { target:'stack', chip:0, hand:'bottom', msg:'Chạm 🥩 Thịt Bò từ ngăn kéo → vào Trạm Cắt!' },
         { target:'station-cut', hand:'center', msg:'Đang cắt 2s...' },
         { target:'board', hand:'center', msg:'Thịt ✂️ cắt xong! Chạm vào thịt trên bàn → Trạm Chiên!' },
         { target:'station-fry', hand:'center', msg:'Đang chiên 2s...' },
-        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh và 🥬 Rau từ ngăn kéo!' },
+        { target:'stack', chip:1, hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh và 🥬 Rau từ ngăn kéo!' },
       ]
     },
   },
   {
     id:4, name:'Challenge 1',
     boardSlots:5,
-    stations:{cut:true, fry:true},
+    stations:{cut:1, fry:1},
     orders:[
       {recipeId:'hamburger_beef_cheese', qty:1},
       {recipeId:'french_fries', qty:1},
@@ -790,15 +874,32 @@ const LEVELS = [
   },
   {
     id:5, name:'Challenge 2',
-    boardSlots:4,
-    stations:{cut:true, fry:true},
+    boardSlots:3,
+    stations:{cut:1, fry:1},
     orders:[
       {recipeId:'hamburger_beef_lettuce', qty:1},
       {recipeId:'hamburger_beef_cheese', qty:1},
     ],
     stacks:['beef', 'cheese', 'bun', 'lettuce'],
   },
+  {
+    id:6, name:'Master Chef',
+    boardSlots:5,
+    stations:{cut:2, fry:2},
+    orders:[
+      {recipeId:'hamburger_beef_lettuce', qty:1, timeLimit:28000},
+      {recipeId:'beef_fries_meal',        qty:1, timeLimit:32000},
+      {recipeId:'egg_sandwich',           qty:1, timeLimit:22000},
+      {recipeId:'hamburger_chicken',      qty:1, timeLimit:30000},
+      {recipeId:'cheese_toast',           qty:1, timeLimit:24000},
+      {recipeId:'veggie_burger',          qty:1, timeLimit:26000},
+      {recipeId:'french_fries',           qty:1, timeLimit:20000},
+    ],
+    stacks:['beef','chicken','egg','fries_raw','cheese','lettuce','cabbage','bun','tomato'],
+  },
 ];
+
+const CUSTOMERS = ['👨‍🍳','👩‍🍳','🧑‍🍳','👴','👵','🧑','👩','🧔','👱‍♀️','🧒'];
 
 /* =============================================================
    5. GAME STATE MANAGER
@@ -808,8 +909,8 @@ const G = {
   unlockedLevel: 0,
   board: [],           // [{id, ingredientId, state}]
   stations: {
-    cut: { item:null, timer:0, active:false },
-    fry: { item:null, timer:0, active:false },
+    cut: [],   // array of {item, timer, active, steamHtml}
+    fry: [],
   },
   stacks: [],            // flat array of ingredients
   orders: [],          // [{recipeId, qty, fulfilled}]
@@ -839,8 +940,8 @@ function loadLevel(idx) {
   const lvl = LEVELS[idx];
   G.currentLevel = idx;
   G.board = [];
-  G.stations.cut = { item:null, timer:0, active:false };
-  G.stations.fry = { item:null, timer:0, active:false };
+  G.stations.cut = Array.from({length: lvl.stations.cut}, () => ({item:null, timer:0, active:false, steamHtml:''}));
+  G.stations.fry = Array.from({length: lvl.stations.fry}, () => ({item:null, timer:0, active:false, steamHtml:''}));
   G.stacks = lvl.stacks;
   G.completedOrders = 0;
   G.totalOrders = lvl.orders.reduce((s,o) => s + o.qty, 0);
@@ -851,6 +952,9 @@ function loadLevel(idx) {
 
   G.orders = lvl.orders.map(o => ({
     recipeId: o.recipeId, qty: o.qty, fulfilled: 0,
+    timer: o.timeLimit || 0,
+    timeLimit: o.timeLimit || 0,
+    customer: CUSTOMERS[Math.floor(Math.random() * CUSTOMERS.length)],
   }));
 
   G.tutorialStep = 0;
@@ -870,6 +974,7 @@ function gameLoop(timestamp) {
 
   if (!G.isGameOver && !G.isVictory && dt < 200) {
     updateStationTimers(dt);
+    updateOrderTimers(dt);
   }
 
   requestAnimationFrame(gameLoop);
@@ -879,14 +984,15 @@ function updateStationTimers(dt) {
   let needsFullRender = false;
 
   ['cut','fry'].forEach(stationId => {
-    const st = G.stations[stationId];
-    if (st.active && st.item) {
-      st.timer += dt;
-      if (st.timer >= CFG.PROCESS_TIME) {
-        dispatchStationToBoard(stationId);
-        needsFullRender = true;
+    G.stations[stationId].forEach(st => {
+      if (st.active && st.item) {
+        st.timer += dt;
+        if (st.timer >= getProcessTime(st.item.ingredientId, stationId)) {
+          dispatchStationToBoard(stationId, st);
+          needsFullRender = true;
+        }
       }
-    }
+    });
   });
 
   if (needsFullRender) {
@@ -897,13 +1003,61 @@ function updateStationTimers(dt) {
   }
 }
 
+function updateOrderTimers(dt) {
+  if (G.orders.length === 0) return;
+  let changed = false;
+
+  G.orders.forEach(order => {
+    if (order.fulfilled >= order.qty || order.cancelled) return;
+    if (order.timeLimit <= 0) return;
+    order.timer -= dt;
+    if (order.timer <= 0) {
+      order.timer = 0;
+      order.cancelled = true;
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    // Remove cancelled orders after brief delay
+    setTimeout(() => {
+      G.orders = G.orders.filter(o => !o.cancelled);
+      G.totalOrders = G.orders.reduce((s,o) => s + (o.qty - o.fulfilled), 0);
+      render();
+      if (G.orders.length === 0) {
+        triggerGameOver();
+      }
+    }, 400);
+    render();
+  } else {
+    // Just update timer bars
+    updateOrderTimerBars();
+  }
+}
+
+function updateOrderTimerBars() {
+  const cards = document.querySelectorAll('.order-card');
+  G.orders.forEach((order, idx) => {
+    if (order.timeLimit <= 0 || order.cancelled) return;
+    const fill = cards[idx] ? cards[idx].querySelector('.order-timer-fill') : null;
+    if (fill) {
+      const pct = Math.max((order.timer / order.timeLimit) * 100, 0);
+      fill.style.width = pct + '%';
+      fill.className = 'order-timer-fill' + (pct < 25 ? ' danger' : pct < 50 ? ' warning' : '');
+    }
+  });
+}
+
 function updateProgressBars() {
   ['cut','fry'].forEach(stationId => {
-    const st = G.stations[stationId];
-    const fill = document.querySelector(`.station[data-station="${stationId}"] .station-progress-fill`);
-    if (fill && st.active) {
-      fill.style.width = Math.min((st.timer / CFG.PROCESS_TIME) * 100, 100) + '%';
-    }
+    G.stations[stationId].forEach((st, idx) => {
+      if (st.active && st.item) {
+        const fill = document.querySelector(`.station[data-station="${stationId}"][data-idx="${idx}"] .station-progress-fill`);
+        if (fill) {
+          fill.style.width = Math.min((st.timer / getProcessTime(st.item.ingredientId, stationId)) * 100, 100) + '%';
+        }
+      }
+    });
   });
 }
 
@@ -936,6 +1090,15 @@ function parseStackItem(item) {
   return { id: item.id, state: item.state || null };
 }
 
+// Get processing time for ingredient at station
+function getProcessTime(ingredientId, stationType) {
+  const ing = INGREDIENTS[ingredientId];
+  if (ing && ing.processTime && ing.processTime[stationType]) {
+    return ing.processTime[stationType];
+  }
+  return CFG.PROCESS_TIME;
+}
+
 function tapIngredient(idx) {
   if (G.isGameOver || G.isVictory || G.animating) return;
   if (idx < 0 || idx >= G.stacks.length) return;
@@ -959,20 +1122,21 @@ function tapBoard(slotIndex) {
   const lvl = LEVELS[G.currentLevel];
   const nextStation = getNextStation(item.ingredientId, item.state);
 
-  if (nextStation && lvl.stations[nextStation] && !G.stations[nextStation].active) {
-    dispatchToStation(nextStation, slotIndex);
-
-    // Advance tutorial BEFORE render so render shows the correct next step
-    if (G.tutorialActive && !G.isVictory) advanceTutorial();
-    render();
-    checkWinLose();
-  } else {
-    // Invalid move - shake feedback
-    const slotEl = document.querySelectorAll('.board-slot')[slotIndex];
-    if (slotEl) {
-      slotEl.classList.add('shake-anim');
-      setTimeout(() => slotEl.classList.remove('shake-anim'), 400);
+  if (nextStation && lvl.stations[nextStation]) {
+    const freeSlot = G.stations[nextStation].find(s => !s.active);
+    if (freeSlot) {
+      dispatchToStation(nextStation, slotIndex, freeSlot);
+      if (G.tutorialActive && !G.isVictory) advanceTutorial();
+      render();
+      checkWinLose();
+      return;
     }
+  }
+  // Invalid move - shake feedback
+  const slotEl = document.querySelectorAll('.board-slot')[slotIndex];
+  if (slotEl) {
+    slotEl.classList.add('shake-anim');
+    setTimeout(() => slotEl.classList.remove('shake-anim'), 400);
   }
 }
 
@@ -983,56 +1147,62 @@ function dispatchIngredient(ingredientId, currentState) {
   const lvl = LEVELS[G.currentLevel];
   const nextStation = getNextStation(ingredientId, currentState);
 
-  if (nextStation && lvl.stations[nextStation] && !G.stations[nextStation].active) {
-    // Send to processing station
-    G.stations[nextStation].item = { ingredientId, state: currentState || null };
-    G.stations[nextStation].timer = 0;
-    G.stations[nextStation].active = true;
-  } else if (G.board.length < lvl.boardSlots) {
-    // Place directly on board
+  if (nextStation && lvl.stations[nextStation]) {
+    const freeSlot = G.stations[nextStation].find(s => !s.active);
+    if (freeSlot) {
+      freeSlot.item = { ingredientId, state: currentState || null };
+      freeSlot.timer = 0;
+      freeSlot.active = true;
+      return;
+    }
+  }
+  if (G.board.length < lvl.boardSlots) {
     G.board.push({
       id: Date.now() + Math.random(),
       ingredientId,
       state: currentState || null,
     });
+  } else {
+    const bar = document.getElementById('ingredientBar');
+    if (bar) {
+      bar.classList.add('shake');
+      setTimeout(() => bar.classList.remove('shake'), 400);
+    }
   }
 }
 
 /**
  * Dispatch board item to a station
  */
-function dispatchToStation(stationId, boardSlotIndex) {
+function dispatchToStation(stationId, boardSlotIndex, stationObj) {
   const item = G.board[boardSlotIndex];
-  const st = G.stations[stationId];
-
-  st.item = { ingredientId: item.ingredientId, state: item.state };
-  st.timer = 0;
-  st.active = true;
+  stationObj.item = { ingredientId: item.ingredientId, state: item.state };
+  stationObj.timer = 0;
+  stationObj.active = true;
   G.board.splice(boardSlotIndex, 1);
 }
 
 /**
  * Station Timer Complete → dispatch processed item to board
  */
-function dispatchStationToBoard(stationId) {
-  const st = G.stations[stationId];
-  if (!st.item) return;
+function dispatchStationToBoard(stationId, stationObj) {
+  if (!stationObj.item) return;
 
   const lvl = LEVELS[G.currentLevel];
-  // After processing: state becomes the station name ('cut' or 'fry')
   const newState = stationId;
 
   if (G.board.length < lvl.boardSlots) {
     G.board.push({
       id: Date.now() + Math.random(),
-      ingredientId: st.item.ingredientId,
+      ingredientId: stationObj.item.ingredientId,
       state: newState,
     });
   }
 
-  st.item = null;
-  st.timer = 0;
-  st.active = false;
+  stationObj.item = null;
+  stationObj.timer = 0;
+  stationObj.active = false;
+  stationObj.steamHtml = '';
 
   // Advance tutorial when station completes
   if (G.tutorialActive) {
@@ -1043,7 +1213,6 @@ function dispatchStationToBoard(stationId) {
       if (curStep) {
         const curIsStation = curStep.target.startsWith('station-');
         const nextIsStation = nextStep && nextStep.target.startsWith('station-');
-        // Advance if: player step (always) OR station step followed by player step
         if (!curIsStation || (curIsStation && !nextIsStation)) {
           advanceTutorial();
         }
@@ -1060,9 +1229,9 @@ function dispatchStationToBoard(stationId) {
 function checkAutoAssemble() {
   if (G.animating) return false;
 
-  // Find first unfulfilled order that can be assembled
+  // Find first unfulfilled, non-cancelled order that can be assembled
   for (const order of G.orders) {
-    if (order.fulfilled >= order.qty) continue;
+    if (order.cancelled || order.fulfilled >= order.qty) continue;
 
     const recipe = RECIPES[order.recipeId];
     if (!recipe) continue;
@@ -1126,6 +1295,7 @@ function startMergeAnimation(order, boardIndices) {
         order.fulfilled++;
         G.completedOrders++;
         G.score += 100;
+        showScorePopup('+100');
 
         G.animating = false;
         render();
@@ -1191,9 +1361,16 @@ function checkWinLose() {
   // Auto-assemble check
   checkAutoAssemble();
 
-  // Victory?
-  if (G.completedOrders >= G.totalOrders) {
+  // Victory? All remaining orders fulfilled
+  const activeOrders = G.orders.filter(o => !o.cancelled);
+  if (activeOrders.length > 0 && activeOrders.every(o => o.fulfilled >= o.qty)) {
     setTimeout(() => triggerVictory(), 400);
+    return;
+  }
+
+  // Game Over? No orders left (all cancelled)
+  if (G.orders.length === 0) {
+    setTimeout(() => triggerGameOver(), 300);
     return;
   }
 
@@ -1210,7 +1387,7 @@ function isStuck() {
   if (G.board.length < lvl.boardSlots) return false;
 
   // Any station still processing → not stuck yet
-  if (G.stations.cut.active || G.stations.fry.active) return false;
+  if (G.stations.cut.some(s => s.active) || G.stations.fry.some(s => s.active)) return false;
 
   // Check if any order can be auto-assembled
   if (canAnyOrderAssemble()) return false;
@@ -1218,7 +1395,7 @@ function isStuck() {
   // Check if any board item can go to a free station
   for (const item of G.board) {
     const nextSt = getNextStation(item.ingredientId, item.state);
-    if (nextSt && lvl.stations[nextSt] && !G.stations[nextSt].active) {
+    if (nextSt && lvl.stations[nextSt] && G.stations[nextSt].some(s => !s.active)) {
       return false;
     }
   }
@@ -1342,6 +1519,7 @@ function renderOrders() {
     const recipe = RECIPES[order.recipeId];
     if (!recipe) return;
     const done = order.fulfilled >= order.qty;
+    const expired = order.cancelled;
 
     const ingEmojis = recipe.requirements.map(r => {
       const ing = INGREDIENTS[r.ingredientId];
@@ -1351,12 +1529,19 @@ function renderOrders() {
       return `<span>${ing ? ing.emoji : '?'}${stateIcon}</span>`;
     }).join('');
 
+    const timerBar = order.timeLimit > 0 && !done ? `
+      <div class="order-timer-bar">
+        <div class="order-timer-fill" style="width:${(order.timer/order.timeLimit)*100}%"></div>
+      </div>` : '';
+
     html += `
-      <div class="order-card${done ? ' completed' : ''}">
+      <div class="order-card${done ? ' completed' : ''}${expired ? ' cancelled' : ''}">
+        <div class="order-customer">${order.customer}</div>
         <div class="order-dish">${recipe.dishEmoji}</div>
         <div class="order-name">${recipe.name}</div>
         <div class="order-ingredients">${ingEmojis}</div>
         <div class="order-check">✅</div>
+        ${timerBar}
       </div>`;
   });
 
@@ -1368,51 +1553,49 @@ function renderStations() {
   const lvl = LEVELS[G.currentLevel];
   let html = '';
 
-  // Cut Station
-  const cutOn = lvl.stations.cut;
-  const cutSt = G.stations.cut;
-  const cutBusy = cutSt.active && cutSt.item;
-  const cutIng = cutBusy ? INGREDIENTS[cutSt.item.ingredientId] : null;
+  // Render station slots for each type
+  ['cut','fry'].forEach(stationId => {
+    const icon = stationId === 'cut' ? '🔪' : '🍳';
+    const label = stationId === 'cut' ? 'Cắt' : 'Chiên';
+    const count = lvl.stations[stationId];
 
-  html += `
-    <div class="station${cutOn ? '' : ' inactive'}" data-station="cut">
-      <div class="station-header">
-        <span class="station-icon">🔪</span>
-        <span class="station-label">Cắt</span>
-      </div>
-      <div class="station-slot${cutBusy ? ' occupied' : ''}">
-        ${cutBusy && cutIng ? cutIng.emoji : ''}
-      </div>
-      <div class="station-progress${cutBusy ? ' active' : ''}">
-        <div class="station-progress-fill" style="width:${cutBusy ? (cutSt.timer/CFG.PROCESS_TIME*100) : 0}%"></div>
-      </div>
-      <div class="station-steam${cutBusy ? ' active' : ''}">
-        ${cutBusy ? makeSteam() : ''}
-      </div>
-    </div>`;
+    for (let i = 0; i < count; i++) {
+      const st = G.stations[stationId][i];
+      const busy = st.active && st.item;
+      const ing = busy ? INGREDIENTS[st.item.ingredientId] : null;
+      if (busy && !st.steamHtml) st.steamHtml = makeSteam();
+      if (!busy) st.steamHtml = '';
 
-  // Fry Station
-  const fryOn = lvl.stations.fry;
-  const frySt = G.stations.fry;
-  const fryBusy = frySt.active && frySt.item;
-  const fryIng = fryBusy ? INGREDIENTS[frySt.item.ingredientId] : null;
+      html += `
+        <div class="station" data-station="${stationId}" data-idx="${i}">
+          <div class="station-header">
+            <span class="station-icon">${icon}</span>
+            <span class="station-label">${label}${count > 1 ? ' ' + (i+1) : ''}</span>
+          </div>
+          <div class="station-slot${busy ? ' occupied' : ''}">
+            ${busy && ing ? ing.emoji : ''}
+          </div>
+          <div class="station-progress${busy ? ' active' : ''}">
+            <div class="station-progress-fill" style="width:${busy ? (st.timer/getProcessTime(st.item.ingredientId,stationId)*100) : 0}%"></div>
+          </div>
+          <div class="station-steam${busy ? ' active' : ''}">
+            ${st.steamHtml}
+          </div>
+        </div>`;
+    }
 
-  html += `
-    <div class="station${fryOn ? '' : ' inactive'}" data-station="fry">
-      <div class="station-header">
-        <span class="station-icon">🍳</span>
-        <span class="station-label">Chiên</span>
-      </div>
-      <div class="station-slot${fryBusy ? ' occupied' : ''}">
-        ${fryBusy && fryIng ? fryIng.emoji : ''}
-      </div>
-      <div class="station-progress${fryBusy ? ' active' : ''}">
-        <div class="station-progress-fill" style="width:${fryBusy ? (frySt.timer/CFG.PROCESS_TIME*100) : 0}%"></div>
-      </div>
-      <div class="station-steam${fryBusy ? ' active' : ''}">
-        ${fryBusy ? makeSteam() : ''}
-      </div>
-    </div>`;
+    // Show inactive placeholder if level has 0 of this station
+    if (count === 0) {
+      html += `
+        <div class="station inactive" data-station="${stationId}">
+          <div class="station-header">
+            <span class="station-icon">${icon}</span>
+            <span class="station-label">${label}</span>
+          </div>
+          <div class="station-slot"></div>
+        </div>`;
+    }
+  });
 
   el.innerHTML = html;
 }
@@ -1461,9 +1644,9 @@ function renderStacks() {
     const ing = INGREDIENTS[ingId];
     const badge = st === 'cut' ? '<span class="state-badge">✂️</span>' :
                   st === 'fry' ? '<span class="state-badge">🔥</span>' : '';
-    const delay = idx * 0.04;
-    html += `<div class="ingredient-chip" onclick="tapIngredient(${idx})" style="animation-delay:${delay}s">
+    html += `<div class="ingredient-chip" onclick="tapIngredient(${idx})">
       ${ing ? ing.emoji : '?'}${badge}
+      <div class="chip-label">${ing ? ing.name : '?'}</div>
     </div>`;
   });
 
@@ -1496,7 +1679,7 @@ function renderTutorial() {
   overlay.classList.add('active');
 
   // Position highlight around target
-  const targetEl = findTutorialTarget(step.target);
+  const targetEl = findTutorialTarget(step.target, step.chip);
   if (targetEl) {
     const r = targetEl.getBoundingClientRect();
     const cr = document.getElementById('gameContainer').getBoundingClientRect();
@@ -1531,8 +1714,8 @@ function renderTutorial() {
   // Wire up tap actions: highlight + message dispatch the correct game action
   const handleTutorialTap = () => {
     if (step.target === 'stack') {
-      // Tap first available ingredient
-      if (G.stacks.length > 0) tapIngredient(0);
+      const chipIdx = (step.chip !== undefined && step.chip !== null) ? step.chip : 0;
+      if (chipIdx < G.stacks.length) tapIngredient(chipIdx);
     } else if (step.target === 'board') {
       // Tap first occupied board slot
       const lvl = LEVELS[G.currentLevel];
@@ -1548,11 +1731,23 @@ function renderTutorial() {
   // Message is purely visual — do NOT set pointer-events or onclick
 }
 
-function findTutorialTarget(targetStr) {
+function findTutorialTarget(targetStr, chipIdx) {
   switch(targetStr) {
-    case 'stack':         return document.getElementById('ingredientBar');
-    case 'station-cut':   return document.querySelector('[data-station="cut"]');
-    case 'station-fry':   return document.querySelector('[data-station="fry"]');
+    case 'stack':
+      if (chipIdx !== undefined && chipIdx !== null) {
+        const chips = document.querySelectorAll('.ingredient-chip');
+        return chips[chipIdx] || document.getElementById('ingredientBar');
+      }
+      return document.getElementById('ingredientBar');
+    case 'station-cut': {
+      // Find first free cut station, or first cut station
+      const slots = document.querySelectorAll('[data-station="cut"]');
+      return slots[0] || null;
+    }
+    case 'station-fry': {
+      const slots = document.querySelectorAll('[data-station="fry"]');
+      return slots[0] || null;
+    }
     case 'board':         return document.getElementById('board');
     default: return null;
   }
