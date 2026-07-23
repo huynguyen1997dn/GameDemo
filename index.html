@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cozy Bistro Puzzle</title>
+<style>
+/* ============================================================
+   RESET & CSS VARIABLES
+   ============================================================ */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+
+:root{
+  --bg-primary:#FDFBF7;
+  --bg-secondary:#F7EDD9;
+  --bg-dark:#2D1B0E;
+  --wood-light:#D4A373;
+  --wood-mid:#C68B59;
+  --wood-dark:#8D5B4C;
+  --food-red:#E63946;
+  --food-yellow:#FFB703;
+  --food-green:#2A9D8F;
+  --food-brown:#8D5B4C;
+  --accent-gold:#D4A373;
+  --accent-warm:#CB997E;
+  --text-dark:#3D2B1F;
+  --text-light:#FDFBF7;
+  --shadow-clay:rgba(141,91,76,0.18);
+  --process-time:2000;
+}
+
+html,body{
+  height:100%;
+  font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+  background:var(--bg-dark);
+  overflow:hidden;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+
+/* ============================================================
+   GAME CONTAINER - Portrait Mobile
+   ============================================================ */
+.game-container{
+  width:100%;
+  max-width:420px;
+  height:100vh;
+  max-height:900px;
+  margin:0 auto;
+  background:var(--bg-primary);
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+/* ============================================================
+   CLAYMORPHISM UTILITIES
+   ============================================================ */
+.clay{
+  border-radius:20px;
+  background:var(--bg-primary);
+  box-shadow:
+    0 6px 24px var(--shadow-clay),
+    inset 0 -4px 8px rgba(141,91,76,0.12),
+    inset 0 4px 8px rgba(255,255,255,0.7);
+}
+
+/* ============================================================
+   HEADER - Level Selector
+   ============================================================ */
+.header{
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex-shrink:0;
+  z-index:10;
+}
+
+.level-btn{
+  width:36px;height:36px;border-radius:12px;
+  border:2px solid transparent;
+  background:var(--bg-secondary);
+  color:var(--text-dark);
+  font-size:13px;font-weight:700;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s ease;
+}
+.level-btn.active{
+  background:var(--accent-gold);color:#fff;
+  border-color:var(--wood-dark);
+  box-shadow:0 2px 8px rgba(212,163,115,0.4);
+}
+.level-btn:active{transform:scale(0.9)}
+.level-btn.locked{opacity:0.35;pointer-events:none}
+
+.header-title{
+  flex:1;text-align:center;
+  font-size:14px;font-weight:700;
+  color:var(--text-dark);
+}
+
+.reset-btn{
+  width:36px;height:36px;border-radius:12px;
+  border:none;background:var(--food-red);
+  color:#fff;font-size:18px;
+  cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .15s;
+}
+.reset-btn:active{transform:scale(0.9)}
+
+/* ============================================================
+   ORDER TRAY
+   ============================================================ */
+.order-tray{
+  padding:4px 12px 8px;
+  flex-shrink:0;
+}
+
+.tray-label{
+  font-size:11px;font-weight:700;
+  color:var(--accent-warm);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:4px;
+  display:flex;align-items:center;gap:4px;
+}
+
+.orders-row{
+  display:flex;gap:8px;
+  overflow-x:auto;padding:2px 0 4px;
+}
+.orders-row::-webkit-scrollbar{display:none}
+
+.order-card{
+  min-width:120px;padding:10px 12px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#FFF9F0,var(--bg-secondary));
+  border:2px dashed var(--accent-gold);
+  display:flex;flex-direction:column;
+  align-items:center;gap:4px;
+  transition:all .3s ease;
+  flex-shrink:0;
+}
+.order-card.completed{
+  border-color:var(--food-green);
+  border-style:solid;
+  background:linear-gradient(135deg,#E8FFF5,#D4F5E9);
+  animation:orderComplete .5s ease;
+}
+
+.order-dish{font-size:30px;line-height:1}
+.order-name{font-size:11px;font-weight:700;color:var(--text-dark)}
+.order-ingredients{display:flex;gap:2px;font-size:15px}
+.order-check{font-size:18px;display:none}
+.order-card.completed .order-check{display:block}
+
+/* ============================================================
+   STATIONS - Processing Zone
+   ============================================================ */
+.stations{
+  padding:4px 16px 6px;
+  display:flex;gap:10px;
+  justify-content:center;
+  flex-shrink:0;
+}
+
+.station{
+  flex:1;max-width:160px;
+  padding:8px 10px;
+  border-radius:18px;
+  background:linear-gradient(135deg,#E8DDD0,#DDD0C0);
+  box-shadow:
+    0 4px 16px var(--shadow-clay),
+    inset 0 -3px 6px rgba(0,0,0,0.06),
+    inset 0 3px 6px rgba(255,255,255,0.5);
+  display:flex;flex-direction:column;
+  align-items:center;gap:4px;
+  position:relative;overflow:hidden;
+  min-height:90px;
+}
+.station.inactive{opacity:0.3;pointer-events:none}
+
+.station-header{
+  display:flex;align-items:center;gap:4px;
+}
+.station-icon{font-size:18px;line-height:1}
+.station-label{
+  font-size:10px;font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+  color:var(--wood-dark);
+}
+
+.station-slot{
+  width:52px;height:52px;border-radius:50%;
+  background:rgba(255,255,255,0.5);
+  border:2px dashed rgba(141,91,76,0.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  position:relative;
+  transition:all .3s ease;
+}
+.station-slot.occupied{
+  border-style:solid;border-color:var(--accent-gold);
+  background:rgba(255,255,255,0.85);
+  animation:stationPulse .6s ease infinite alternate;
+}
+
+.station-progress{
+  width:52px;height:5px;border-radius:3px;
+  background:rgba(0,0,0,0.08);
+  overflow:hidden;display:none;
+}
+.station-progress.active{display:block}
+.station-progress-fill{
+  height:100%;width:0%;border-radius:3px;
+  background:linear-gradient(90deg,var(--food-yellow),var(--food-red));
+  transition:width 0.1s linear;
+}
+
+.station-steam{
+  position:absolute;inset:0;
+  pointer-events:none;overflow:hidden;
+  opacity:0;transition:opacity .3s;
+}
+.station-steam.active{opacity:1}
+
+.steam-particle{
+  position:absolute;
+  width:8px;height:8px;
+  background:rgba(255,255,255,0.5);
+  border-radius:50%;
+  animation:steamRise 1.5s ease-out infinite;
+}
+
+/* ============================================================
+   BOARD - Center Counter
+   ============================================================ */
+.board-section{
+  flex:1;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  padding:2px 12px 6px;
+  min-height:0;
+}
+
+.board-label{
+  font-size:11px;font-weight:700;
+  color:var(--accent-warm);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:6px;
+}
+
+.board{
+  display:flex;gap:8px;
+  justify-content:center;
+  flex-wrap:wrap;
+}
+
+.board-slot{
+  width:58px;height:58px;
+  border-radius:16px;
+  background:linear-gradient(135deg,var(--bg-secondary),#EDE0C8);
+  border:2px solid rgba(212,163,115,0.3);
+  box-shadow:
+    inset 0 2px 6px rgba(0,0,0,0.06),
+    inset 0 -1px 4px rgba(255,255,255,0.4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;
+  position:relative;
+  cursor:pointer;
+  transition:all .2s ease;
+}
+.board-slot:active{transform:scale(0.9)}
+
+.board-slot.empty{
+  opacity:0.45;cursor:default;
+}
+.board-slot.occupied{
+  background:linear-gradient(135deg,#FFF9F0,#FFF3E0);
+  border-color:var(--accent-gold);
+  box-shadow:
+    0 2px 8px rgba(212,163,115,0.3),
+    inset 0 -2px 4px rgba(141,91,76,0.1),
+    inset 0 2px 4px rgba(255,255,255,0.7);
+}
+
+.processing-badge{
+  position:absolute;bottom:-3px;right:-3px;
+  font-size:10px;
+  background:var(--accent-gold);color:#fff;
+  border-radius:6px;padding:1px 4px;
+  font-weight:700;
+  box-shadow:0 1px 4px rgba(0,0,0,0.15);
+}
+
+/* ============================================================
+   INGREDIENT BAR - Bottom Flat Row
+   ============================================================ */
+.ingredient-bar{
+  padding:6px 12px 16px;
+  flex-shrink:0;
+  display:flex;flex-wrap:wrap;
+  gap:8px;justify-content:center;
+  min-height:56px;
+}
+
+.ingredient-chip{
+  width:52px;height:52px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#FFF9F0,var(--bg-primary));
+  border:2px solid rgba(212,163,115,0.3);
+  box-shadow:
+    0 3px 12px var(--shadow-clay),
+    inset 0 -2px 4px rgba(141,91,76,0.08),
+    inset 0 2px 4px rgba(255,255,255,0.6);
+  display:flex;align-items:center;justify-content:center;
+  font-size:26px;
+  cursor:pointer;
+  transition:all .15s ease;
+  position:relative;
+}
+.ingredient-chip:active{
+  transform:scale(0.88) !important;
+  box-shadow:0 1px 4px var(--shadow-clay);
+}
+.ingredient-chip .state-badge{
+  position:absolute;bottom:-2px;right:-2px;
+  font-size:9px;
+  background:var(--accent-gold);color:#fff;
+  border-radius:5px;padding:1px 3px;
+  font-weight:700;
+  box-shadow:0 1px 3px rgba(0,0,0,0.12);
+}
+.ingredient-chip .count-badge{
+  position:absolute;top:-4px;right:-4px;
+  min-width:18px;height:18px;
+  border-radius:9px;
+  background:var(--food-red);color:#fff;
+  font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 1px 4px rgba(0,0,0,0.2);
+}
+
+/* ============================================================
+   TUTORIAL OVERLAY
+   ============================================================ */
+.tutorial-overlay{
+  position:absolute;inset:0;
+  z-index:100;
+  pointer-events:none;
+  display:none;
+}
+.tutorial-overlay.active{display:block}
+
+.tutorial-backdrop{
+  position:absolute;inset:0;
+  background:rgba(45,27,14,0.04);
+}
+
+.tutorial-highlight{
+  position:absolute;
+  border:3px solid var(--food-yellow);
+  border-radius:20px;
+  box-shadow:0 0 0 4px rgba(255,183,3,0.2),0 0 20px rgba(255,183,3,0.3);
+  animation:highlightPulse 1.2s ease infinite;
+  pointer-events:none;
+  z-index:102;
+}
+
+.tutorial-hand{
+  position:absolute;
+  font-size:30px;z-index:103;
+  animation:handBounce .8s ease infinite;
+  pointer-events:none;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+}
+
+.tutorial-message{
+  position:absolute;
+  top:42%;left:50%;
+  transform:translate(-50%,-50%);
+  background:var(--text-dark);
+  color:var(--text-light);
+  padding:12px 20px;
+  border-radius:16px;
+  font-size:13px;font-weight:600;
+  text-align:center;max-width:320px;
+  z-index:104;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  pointer-events:none;
+  animation:fadeInUp .3s ease;
+}
+.tutorial-message::after{
+  content:'';position:absolute;
+  bottom:-8px;left:50%;transform:translateX(-50%);
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-top:8px solid var(--text-dark);
+}
+
+/* ============================================================
+   MODALS - Victory & Game Over
+   ============================================================ */
+.modal-overlay{
+  position:absolute;inset:0;
+  background:rgba(45,27,14,0.6);
+  backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;
+  z-index:200;
+}
+.modal-overlay.active{
+  display:flex;
+  animation:fadeIn .3s ease;
+}
+
+.modal{
+  background:var(--bg-primary);
+  border-radius:28px;
+  padding:32px 28px;
+  text-align:center;
+  max-width:300px;width:85%;
+  box-shadow:
+    0 12px 48px rgba(0,0,0,0.3),
+    inset 0 -4px 12px rgba(141,91,76,0.12),
+    inset 0 4px 12px rgba(255,255,255,0.7);
+  animation:modalBounceIn .5s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.modal-emoji{font-size:48px;margin-bottom:8px}
+.modal-title{font-size:22px;font-weight:800;color:var(--text-dark);margin-bottom:6px}
+.modal-subtitle{font-size:13px;color:var(--accent-warm);margin-bottom:16px}
+.modal-stars{font-size:28px;letter-spacing:4px;margin-bottom:16px}
+
+.modal-btn{
+  display:inline-flex;align-items:center;justify-content:center;
+  gap:6px;padding:12px 24px;
+  border-radius:16px;border:none;
+  font-size:14px;font-weight:700;
+  cursor:pointer;transition:transform .15s;
+  margin:4px;
+}
+.modal-btn:active{transform:scale(0.94)}
+
+.btn-primary{
+  background:var(--accent-gold);color:#fff;
+  box-shadow:0 3px 12px rgba(212,163,115,0.4);
+}
+.btn-secondary{
+  background:var(--bg-secondary);color:var(--text-dark);
+}
+.btn-danger{
+  background:var(--food-red);color:#fff;
+}
+
+/* ============================================================
+   CONFETTI CANVAS
+   ============================================================ */
+.confetti-canvas{
+  position:absolute;inset:0;
+  width:100%;height:100%;
+  pointer-events:none;z-index:300;
+}
+
+/* ============================================================
+   SCORE POPUP
+   ============================================================ */
+.score-popup{
+  position:absolute;
+  font-size:16px;font-weight:800;
+  color:var(--food-yellow);
+  pointer-events:none;
+  animation:scorePopUp .8s ease forwards;
+  text-shadow:0 1px 4px rgba(0,0,0,0.3);
+  z-index:150;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes orderComplete{
+  0%{transform:scale(1)}
+  50%{transform:scale(1.08)}
+  100%{transform:scale(1)}
+}
+@keyframes stationPulse{
+  0%{box-shadow:0 0 0 0 rgba(255,183,3,0.3)}
+  100%{box-shadow:0 0 0 6px rgba(255,183,3,0)}
+}
+@keyframes steamRise{
+  0%{opacity:.7;transform:translateY(0) scale(1)}
+  100%{opacity:0;transform:translateY(-40px) scale(2)}
+}
+@keyframes itemReady{
+  0%{transform:scale(0.8);opacity:.5}
+  60%{transform:scale(1.12)}
+  100%{transform:scale(1);opacity:1}
+}
+@keyframes highlightPulse{
+  0%,100%{box-shadow:0 0 0 4px rgba(255,183,3,0.2),0 0 20px rgba(255,183,3,0.3)}
+  50%{box-shadow:0 0 0 8px rgba(255,183,3,0.1),0 0 30px rgba(255,183,3,0.5)}
+}
+@keyframes handBounce{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-8px)}
+}
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateX(-50%) translateY(10px)}
+  to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes modalBounceIn{
+  0%{opacity:0;transform:scale(0.7) translateY(20px)}
+  100%{opacity:1;transform:scale(1) translateY(0)}
+}
+@keyframes shakeReject{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+@keyframes scorePopUp{
+  0%{opacity:1;transform:translate(-50%,0) scale(1)}
+  100%{opacity:0;transform:translate(-50%,-30px) scale(1.3)}
+}
+@keyframes flyBounce{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.2)}
+  100%{transform:scale(1)}
+}
+@keyframes glowComplete{
+  0%{box-shadow:0 0 0 0 rgba(42,157,143,0.4)}
+  100%{box-shadow:0 0 0 12px rgba(42,157,143,0)}
+}
+@keyframes itemMergeGlow{
+  0%{box-shadow:0 0 0 0 rgba(42,157,143,0.6)}
+  50%{box-shadow:0 0 0 10px rgba(42,157,143,0.3)}
+  100%{box-shadow:0 0 0 0 rgba(42,157,143,0)}
+}
+@keyframes itemMergeShrink{
+  0%{transform:scale(1);opacity:1}
+  100%{transform:scale(0.3);opacity:0}
+}
+
+.shake-anim{animation:shakeReject .4s ease}
+.glow-anim{animation:glowComplete .6s ease}
+
+/* Auto-assembly animations */
+.board-slot.merge-glow{
+  animation:itemMergeGlow .5s ease forwards;
+  border-color:var(--food-green) !important;
+  background:linear-gradient(135deg,#E8FFF5,#D4F5E9) !important;
+}
+.board-slot.merge-shrink{
+  animation:itemMergeShrink .35s ease forwards;
+}
+.fly-dish{
+  position:absolute;
+  font-size:36px;
+  z-index:250;
+  pointer-events:none;
+  transition:all .55s cubic-bezier(0.34,1.56,0.64,1);
+}
+.fly-dish.fly-active{
+  transform:translateY(0) scale(1.3);
+  opacity:0;
+}
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+@media(max-height:680px){
+  .board-slot{width:48px;height:48px;font-size:24px}
+  .ingredient-chip{width:44px;height:44px;font-size:22px}
+  .station{min-height:78px;padding:6px 8px}
+  .station-slot{width:44px;height:44px;font-size:24px}
+  .order-card{min-width:100px;padding:8px}
+  .order-dish{font-size:24px}
+}
+
+@media(min-width:421px){
+  .game-container{
+    border-left:3px solid rgba(141,91,76,0.1);
+    border-right:3px solid rgba(141,91,76,0.1);
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="game-container" id="gameContainer">
+  <!-- Header: Level Selector -->
+  <header class="header" id="header"></header>
+
+  <!-- Order Tray -->
+  <section class="order-tray">
+    <div class="tray-label">🍽️ Đơn Hàng</div>
+    <div class="orders-row" id="ordersRow"></div>
+  </section>
+
+  <!-- Processing Stations -->
+  <section class="stations" id="stations"></section>
+
+  <!-- Board (Bàn Bếp Hẹp) -->
+  <section class="board-section">
+    <div class="board-label">🪵 Bàn Bếp</div>
+    <div class="board" id="board"></div>
+  </section>
+
+  <!-- Ingredient Bar -->
+  <section class="ingredient-bar" id="ingredientBar"></section>
+
+  <!-- Tutorial Overlay -->
+  <div class="tutorial-overlay" id="tutorialOverlay">
+    <div class="tutorial-backdrop"></div>
+    <div class="tutorial-highlight" id="tutorialHighlight"></div>
+    <div class="tutorial-hand" id="tutorialHand"></div>
+    <div class="tutorial-message" id="tutorialMessage"></div>
+  </div>
+
+  <!-- Victory Modal -->
+  <div class="modal-overlay" id="victoryModal">
+    <div class="modal">
+      <div class="modal-emoji">🎉</div>
+      <div class="modal-title">Hoàn Thành!</div>
+      <div class="modal-subtitle">Level đã được chinh phục!</div>
+      <div class="modal-stars" id="victoryStars"></div>
+      <div>
+        <button class="modal-btn btn-secondary" onclick="G.resetLevel()">🔄 Chơi Lại</button>
+        <button class="modal-btn btn-primary" id="nextLevelBtn" onclick="G.nextLevel()">Tiếp →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Over Modal -->
+  <div class="modal-overlay" id="gameOverModal">
+    <div class="modal">
+      <div class="modal-emoji">😵</div>
+      <div class="modal-title">Bế Tắc!</div>
+      <div class="modal-subtitle">Bàn bếp đã đầy,<br>không còn nước đi hợp lệ.</div>
+      <div style="margin-top:14px">
+        <button class="modal-btn btn-danger" onclick="G.resetLevel()">🔄 Thử Lại</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas class="confetti-canvas" id="confettiCanvas"></canvas>
+</div>
+
+<!-- =============================================================
+     JAVASCRIPT GAME ENGINE
+     ============================================================= -->
+<script>
+/* =============================================================
+   1. CONFIGURATION & CONSTANTS
+   ============================================================= */
+const CFG = {
+  PROCESS_TIME: 2000,
+  CONFETTI_COLORS: ['#E63946','#FFB703','#2A9D8F','#D4A373','#CB997E','#F4A261','#E76F51','#A8DADC'],
+  CONFETTI_COUNT: 45,
+};
+
+/* =============================================================
+   2. INGREDIENT DEFINITIONS
+   chain = ordered processing steps (station IDs)
+   stations = map of stationId -> which station handles it
+   ============================================================= */
+const INGREDIENTS = {
+  bun:       { id:'bun',       emoji:'🍞', name:'Vỏ Bánh',    chain:[] },
+  lettuce:   { id:'lettuce',   emoji:'🥬', name:'Rau Xà Lách', chain:[] },
+  beef:      { id:'beef',      emoji:'🥩', name:'Thịt Bò',     chain:['cut','fry'], stations:{cut:'cut',fry:'fry'} },
+  cheese:    { id:'cheese',    emoji:'🧀', name:'Phô Mai',     chain:['cut'],       stations:{cut:'cut'} },
+  fries_raw: { id:'fries_raw', emoji:'🥔', name:'Khoai Tây',   chain:['cut','fry'], stations:{cut:'cut',fry:'fry'} },
+  chicken:   { id:'chicken',   emoji:'🍗', name:'Thịt Gà',     chain:['fry'],       stations:{fry:'fry'} },
+  cabbage:   { id:'cabbage',   emoji:'🥬', name:'Bắp Cải',     chain:['cut'],       stations:{cut:'cut'} },
+};
+
+/* =============================================================
+   3. RECIPE DEFINITIONS
+   requirements[].requiredState:
+     null  = raw (no processing needed, any state OK)
+     'cut' = must be cut-processed
+     'fry' = must be fry-processed
+   ============================================================= */
+const RECIPES = {
+  simple_bun_lettuce: {
+    id:'simple_bun_lettuce', dishEmoji:'🥪', name:'Bánh Salad',
+    requirements:[
+      { ingredientId:'bun',     requiredState:null },
+      { ingredientId:'lettuce', requiredState:null },
+    ]
+  },
+  hamburger_chicken: {
+    id:'hamburger_chicken', dishEmoji:'🍔', name:'Gà Giòn',
+    requirements:[
+      { ingredientId:'bun',     requiredState:null },
+      { ingredientId:'chicken', requiredState:'fry' },
+      { ingredientId:'cabbage', requiredState:'cut' },
+    ]
+  },
+  hamburger_beef_lettuce: {
+    id:'hamburger_beef_lettuce', dishEmoji:'🍔', name:'Bò Rau',
+    requirements:[
+      { ingredientId:'bun',     requiredState:null },
+      { ingredientId:'beef',    requiredState:'fry' },
+      { ingredientId:'lettuce', requiredState:null },
+    ]
+  },
+  hamburger_beef_cheese: {
+    id:'hamburger_beef_cheese', dishEmoji:'🍔', name:'Bò Phô Mai',
+    requirements:[
+      { ingredientId:'bun',   requiredState:null },
+      { ingredientId:'beef',  requiredState:'fry' },
+      { ingredientId:'cheese', requiredState:'cut' },
+    ]
+  },
+  french_fries: {
+    id:'french_fries', dishEmoji:'🍟', name:'Khoai Chiên',
+    requirements:[
+      { ingredientId:'fries_raw', requiredState:'fry' },
+    ]
+  },
+};
+
+/* =============================================================
+   4. LEVEL DEFINITIONS (5 Levels)
+   ============================================================= */
+const LEVELS = [
+  {
+    id:1, name:'Tutorial 1',
+    boardSlots:6,
+    stations:{cut:false, fry:false},
+    orders:[{recipeId:'simple_bun_lettuce', qty:1}],
+    stacks:['bun', 'lettuce'],
+    tutorial:{
+      steps:[
+        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh từ ngăn kéo!' },
+        { target:'stack', hand:'bottom', msg:'Giờ chạm 🥬 Rau Xà Lách!' },
+        { target:'board', hand:'center', msg:'Cả hai nguyên liệu lên bàn → Đơn tự ghép! ✨' },
+      ]
+    },
+  },
+  {
+    id:2, name:'Tutorial 2',
+    boardSlots:6,
+    stations:{cut:false, fry:true},
+    orders:[{recipeId:'hamburger_chicken', qty:1}],
+    stacks:[{id:'cabbage',state:'cut'}, 'chicken', 'bun'],
+    tutorial:{
+      steps:[
+        { target:'stack', hand:'bottom', msg:'Chạm 🍗 Thịt Gà từ ngăn kéo — cần qua Trạm Chiên!' },
+        { target:'station-fry', hand:'center', msg:'Gà đang chiên 2s... Đợi hoàn tất!' },
+        { target:'stack', hand:'bottom', msg:'Bắp Cải ✂️ đã cắt sẵn — chạm lấy!' },
+        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh đặt lên bàn!' },
+      ]
+    },
+  },
+  {
+    id:3, name:'Tutorial 3',
+    boardSlots:5,
+    stations:{cut:true, fry:true},
+    orders:[{recipeId:'hamburger_beef_lettuce', qty:1}],
+    stacks:['beef', 'bun', 'lettuce'],
+    tutorial:{
+      steps:[
+        { target:'stack', hand:'bottom', msg:'Chạm 🥩 Thịt Bò từ ngăn kéo → vào Trạm Cắt!' },
+        { target:'station-cut', hand:'center', msg:'Đang cắt 2s...' },
+        { target:'board', hand:'center', msg:'Thịt ✂️ cắt xong! Chạm vào thịt trên bàn → Trạm Chiên!' },
+        { target:'station-fry', hand:'center', msg:'Đang chiên 2s...' },
+        { target:'stack', hand:'bottom', msg:'Chạm 🍞 Vỏ Bánh và 🥬 Rau từ ngăn kéo!' },
+      ]
+    },
+  },
+  {
+    id:4, name:'Challenge 1',
+    boardSlots:5,
+    stations:{cut:true, fry:true},
+    orders:[
+      {recipeId:'hamburger_beef_cheese', qty:1},
+      {recipeId:'french_fries', qty:1},
+    ],
+    stacks:['fries_raw', 'cheese', 'beef', 'bun'],
+  },
+  {
+    id:5, name:'Challenge 2',
+    boardSlots:4,
+    stations:{cut:true, fry:true},
+    orders:[
+      {recipeId:'hamburger_beef_lettuce', qty:1},
+      {recipeId:'hamburger_beef_cheese', qty:1},
+    ],
+    stacks:['beef', 'cheese', 'bun', 'lettuce'],
+  },
+];
+
+/* =============================================================
+   5. GAME STATE MANAGER
+   ============================================================= */
+const G = {
+  currentLevel: 0,
+  unlockedLevel: 0,
+  board: [],           // [{id, ingredientId, state}]
+  stations: {
+    cut: { item:null, timer:0, active:false },
+    fry: { item:null, timer:0, active:false },
+  },
+  stacks: [],            // flat array of ingredients
+  orders: [],          // [{recipeId, qty, fulfilled}]
+  completedOrders: 0,
+  totalOrders: 0,
+  score: 0,
+  isGameOver: false,
+  isVictory: false,
+  tutorialStep: 0,
+  tutorialActive: false,
+  lastTick: 0,
+  animating: false,   // guard: block taps during merge animation
+};
+
+/* =============================================================
+   6. INITIALIZATION
+   ============================================================= */
+function initGame() {
+  G.currentLevel = 0;
+  G.unlockedLevel = 0;
+  setupConfettiCanvas();
+  loadLevel(0);
+  requestAnimationFrame(gameLoop);
+}
+
+function loadLevel(idx) {
+  const lvl = LEVELS[idx];
+  G.currentLevel = idx;
+  G.board = [];
+  G.stations.cut = { item:null, timer:0, active:false };
+  G.stations.fry = { item:null, timer:0, active:false };
+  G.stacks = lvl.stacks;
+  G.completedOrders = 0;
+  G.totalOrders = lvl.orders.reduce((s,o) => s + o.qty, 0);
+  G.score = 0;
+  G.isGameOver = false;
+  G.isVictory = false;
+  G.animating = false;
+
+  G.orders = lvl.orders.map(o => ({
+    recipeId: o.recipeId, qty: o.qty, fulfilled: 0,
+  }));
+
+  G.tutorialStep = 0;
+  G.tutorialActive = !!lvl.tutorial;
+
+  hideAllModals();
+  render();
+}
+
+/* =============================================================
+   7. GAME LOOP - Station Timer Processing
+   ============================================================= */
+function gameLoop(timestamp) {
+  if (!G.lastTick) G.lastTick = timestamp;
+  const dt = timestamp - G.lastTick;
+  G.lastTick = timestamp;
+
+  if (!G.isGameOver && !G.isVictory && dt < 200) {
+    updateStationTimers(dt);
+  }
+
+  requestAnimationFrame(gameLoop);
+}
+
+function updateStationTimers(dt) {
+  let needsFullRender = false;
+
+  ['cut','fry'].forEach(stationId => {
+    const st = G.stations[stationId];
+    if (st.active && st.item) {
+      st.timer += dt;
+      if (st.timer >= CFG.PROCESS_TIME) {
+        dispatchStationToBoard(stationId);
+        needsFullRender = true;
+      }
+    }
+  });
+
+  if (needsFullRender) {
+    render();
+    checkWinLose();
+  } else {
+    updateProgressBars();
+  }
+}
+
+function updateProgressBars() {
+  ['cut','fry'].forEach(stationId => {
+    const st = G.stations[stationId];
+    const fill = document.querySelector(`.station[data-station="${stationId}"] .station-progress-fill`);
+    if (fill && st.active) {
+      fill.style.width = Math.min((st.timer / CFG.PROCESS_TIME) * 100, 100) + '%';
+    }
+  });
+}
+
+/* =============================================================
+   8. SMART TAP HANDLER
+   Priority: Station (if free & needed) → Board (if room)
+   ============================================================= */
+
+// Find the next processing station needed for an ingredient at given state
+function getNextStation(ingredientId, currentState) {
+  const ing = INGREDIENTS[ingredientId];
+  if (!ing || !ing.chain || ing.chain.length === 0) return null;
+
+  const curIdx = currentState ? ing.chain.indexOf(currentState) : -1;
+  const nextIdx = curIdx + 1;
+  if (nextIdx >= ing.chain.length) return null;
+  return ing.chain[nextIdx];
+}
+
+// Determine the final state after all processing
+function getFinalState(ingredientId) {
+  const ing = INGREDIENTS[ingredientId];
+  if (!ing || !ing.chain || ing.chain.length === 0) return null;
+  return ing.chain[ing.chain.length - 1];
+}
+
+// Extract ingredientId and state from stack item (string or object)
+function parseStackItem(item) {
+  if (typeof item === 'string') return { id: item, state: null };
+  return { id: item.id, state: item.state || null };
+}
+
+function tapIngredient(idx) {
+  if (G.isGameOver || G.isVictory || G.animating) return;
+  if (idx < 0 || idx >= G.stacks.length) return;
+
+  const raw = G.stacks[idx];
+  const { id: ingredientId, state: currentState } = parseStackItem(raw);
+  dispatchIngredient(ingredientId, currentState);
+
+  if (G.tutorialActive && !G.isVictory) advanceTutorial();
+  render();
+  checkWinLose();
+}
+
+function tapBoard(slotIndex) {
+  if (G.isGameOver || G.isVictory || G.animating) return;
+  if (slotIndex < 0 || slotIndex >= G.board.length) return;
+
+  const item = G.board[slotIndex];
+  if (!item) return;
+
+  const lvl = LEVELS[G.currentLevel];
+  const nextStation = getNextStation(item.ingredientId, item.state);
+
+  if (nextStation && lvl.stations[nextStation] && !G.stations[nextStation].active) {
+    dispatchToStation(nextStation, slotIndex);
+
+    // Advance tutorial BEFORE render so render shows the correct next step
+    if (G.tutorialActive && !G.isVictory) advanceTutorial();
+    render();
+    checkWinLose();
+  } else {
+    // Invalid move - shake feedback
+    const slotEl = document.querySelectorAll('.board-slot')[slotIndex];
+    if (slotEl) {
+      slotEl.classList.add('shake-anim');
+      setTimeout(() => slotEl.classList.remove('shake-anim'), 400);
+    }
+  }
+}
+
+/**
+ * Smart dispatch: route raw ingredient to station or board.
+ */
+function dispatchIngredient(ingredientId, currentState) {
+  const lvl = LEVELS[G.currentLevel];
+  const nextStation = getNextStation(ingredientId, currentState);
+
+  if (nextStation && lvl.stations[nextStation] && !G.stations[nextStation].active) {
+    // Send to processing station
+    G.stations[nextStation].item = { ingredientId, state: currentState || null };
+    G.stations[nextStation].timer = 0;
+    G.stations[nextStation].active = true;
+  } else if (G.board.length < lvl.boardSlots) {
+    // Place directly on board
+    G.board.push({
+      id: Date.now() + Math.random(),
+      ingredientId,
+      state: currentState || null,
+    });
+  }
+}
+
+/**
+ * Dispatch board item to a station
+ */
+function dispatchToStation(stationId, boardSlotIndex) {
+  const item = G.board[boardSlotIndex];
+  const st = G.stations[stationId];
+
+  st.item = { ingredientId: item.ingredientId, state: item.state };
+  st.timer = 0;
+  st.active = true;
+  G.board.splice(boardSlotIndex, 1);
+}
+
+/**
+ * Station Timer Complete → dispatch processed item to board
+ */
+function dispatchStationToBoard(stationId) {
+  const st = G.stations[stationId];
+  if (!st.item) return;
+
+  const lvl = LEVELS[G.currentLevel];
+  // After processing: state becomes the station name ('cut' or 'fry')
+  const newState = stationId;
+
+  if (G.board.length < lvl.boardSlots) {
+    G.board.push({
+      id: Date.now() + Math.random(),
+      ingredientId: st.item.ingredientId,
+      state: newState,
+    });
+  }
+
+  st.item = null;
+  st.timer = 0;
+  st.active = false;
+
+  // Advance tutorial when station completes
+  if (G.tutorialActive) {
+    const lvl = LEVELS[G.currentLevel];
+    if (lvl.tutorial) {
+      const curStep = lvl.tutorial.steps[G.tutorialStep];
+      const nextStep = lvl.tutorial.steps[G.tutorialStep + 1];
+      if (curStep) {
+        const curIsStation = curStep.target.startsWith('station-');
+        const nextIsStation = nextStep && nextStep.target.startsWith('station-');
+        // Advance if: player step (always) OR station step followed by player step
+        if (!curIsStation || (curIsStation && !nextIsStation)) {
+          advanceTutorial();
+        }
+      }
+    }
+  }
+}
+
+/* =============================================================
+   9. AUTO RECIPE CHECKER
+   Scans all orders, tries to match ingredients on the board.
+   When matched → animated merge → fly to order tray.
+   ============================================================= */
+function checkAutoAssemble() {
+  if (G.animating) return false;
+
+  // Find first unfulfilled order that can be assembled
+  for (const order of G.orders) {
+    if (order.fulfilled >= order.qty) continue;
+
+    const recipe = RECIPES[order.recipeId];
+    if (!recipe) continue;
+
+    const usedBoardIdx = new Set();
+    let allMatched = true;
+
+    for (const req of recipe.requirements) {
+      const matchIdx = G.board.findIndex((item, idx) => {
+        if (usedBoardIdx.has(idx)) return false;
+        if (item.ingredientId !== req.ingredientId) return false;
+        if (req.requiredState === null) return true;
+        return item.state === req.requiredState;
+      });
+      if (matchIdx === -1) { allMatched = false; break; }
+      usedBoardIdx.add(matchIdx);
+    }
+
+    if (allMatched) {
+      startMergeAnimation(order, [...usedBoardIdx]);
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Animated merge: glow → shrink → fly dish → complete order
+ */
+function startMergeAnimation(order, boardIndices) {
+  G.animating = true;
+
+  // Phase 1: Glow matched items on the board
+  const boardEl = document.getElementById('board');
+  const slotEls = boardEl.querySelectorAll('.board-slot');
+  boardIndices.forEach(idx => {
+    if (slotEls[idx]) slotEls[idx].classList.add('merge-glow');
+  });
+
+  // Phase 2: After glow, shrink items
+  setTimeout(() => {
+    boardIndices.forEach(idx => {
+      if (slotEls[idx]) {
+        slotEls[idx].classList.remove('merge-glow');
+        slotEls[idx].classList.add('merge-shrink');
+      }
+    });
+
+    // Phase 3: After shrink, fly dish emoji to order tray
+    setTimeout(() => {
+      const recipe = RECIPES[order.recipeId];
+      spawnFlyDish(recipe.dishEmoji, boardEl, order);
+
+      // Phase 4: Complete the order
+      setTimeout(() => {
+        // Remove items from board
+        [...boardIndices].sort((a, b) => b - a).forEach(idx => {
+          G.board.splice(idx, 1);
+        });
+
+        order.fulfilled++;
+        G.completedOrders++;
+        G.score += 100;
+
+        G.animating = false;
+        render();
+        checkWinLose();
+      }, 500);
+    }, 300);
+  }, 500);
+}
+
+/**
+ * Create a flying dish emoji from board center to order tray
+ */
+function spawnFlyDish(emoji, fromEl, order) {
+  const container = document.getElementById('gameContainer');
+  const fromRect = fromEl.getBoundingClientRect();
+  const containerRect = container.getBoundingClientRect();
+
+  // Find target order card
+  const orderCards = document.querySelectorAll('.order-card');
+  let targetCard = null;
+  const orderIdx = G.orders.indexOf(order);
+  if (orderIdx >= 0 && orderIdx < orderCards.length) {
+    targetCard = orderCards[orderIdx];
+  }
+
+  const flyEl = document.createElement('div');
+  flyEl.className = 'fly-dish';
+  flyEl.textContent = emoji;
+
+  // Start from board center
+  const startX = fromRect.left - containerRect.left + fromRect.width / 2 - 18;
+  const startY = fromRect.top - containerRect.top + fromRect.height / 2 - 18;
+  flyEl.style.left = startX + 'px';
+  flyEl.style.top = startY + 'px';
+
+  container.appendChild(flyEl);
+
+  // Trigger reflow then animate to target
+  requestAnimationFrame(() => {
+    if (targetCard) {
+      const toRect = targetCard.getBoundingClientRect();
+      const endX = toRect.left - containerRect.left + toRect.width / 2 - 18;
+      const endY = toRect.top - containerRect.top + toRect.height / 2 - 18;
+      flyEl.style.left = endX + 'px';
+      flyEl.style.top = endY + 'px';
+    } else {
+      flyEl.style.top = (startY - 200) + 'px';
+    }
+    flyEl.style.transform = 'scale(1.3)';
+    flyEl.style.opacity = '0';
+  });
+
+  setTimeout(() => flyEl.remove(), 650);
+}
+
+/* =============================================================
+   10. WIN / LOSE CONDITION CHECKER
+   ============================================================= */
+function checkWinLose() {
+  // Don't check during animation
+  if (G.animating) return;
+
+  // Auto-assemble check
+  checkAutoAssemble();
+
+  // Victory?
+  if (G.completedOrders >= G.totalOrders) {
+    setTimeout(() => triggerVictory(), 400);
+    return;
+  }
+
+  // Stuck?
+  if (isStuck()) {
+    setTimeout(() => triggerGameOver(), 300);
+  }
+}
+
+function isStuck() {
+  const lvl = LEVELS[G.currentLevel];
+
+  // Board not full → not stuck
+  if (G.board.length < lvl.boardSlots) return false;
+
+  // Any station still processing → not stuck yet
+  if (G.stations.cut.active || G.stations.fry.active) return false;
+
+  // Check if any order can be auto-assembled
+  if (canAnyOrderAssemble()) return false;
+
+  // Check if any board item can go to a free station
+  for (const item of G.board) {
+    const nextSt = getNextStation(item.ingredientId, item.state);
+    if (nextSt && lvl.stations[nextSt] && !G.stations[nextSt].active) {
+      return false;
+    }
+  }
+
+  // All checks passed → stuck!
+  return true;
+}
+
+function canAnyOrderAssemble() {
+  for (const order of G.orders) {
+    if (order.fulfilled >= order.qty) continue;
+    const recipe = RECIPES[order.recipeId];
+    if (!recipe) continue;
+
+    const usedBoardIdx = new Set();
+    let allMatched = true;
+
+    for (const req of recipe.requirements) {
+      const matchIdx = G.board.findIndex((item, idx) => {
+        if (usedBoardIdx.has(idx)) return false;
+        if (item.ingredientId !== req.ingredientId) return false;
+        if (req.requiredState === null) return true;
+        return item.state === req.requiredState;
+      });
+      if (matchIdx === -1) { allMatched = false; break; }
+      usedBoardIdx.add(matchIdx);
+    }
+    if (allMatched) return true;
+  }
+  return false;
+}
+
+function triggerVictory() {
+  G.isVictory = true;
+  if (G.currentLevel >= G.unlockedLevel && G.currentLevel < LEVELS.length - 1) {
+    G.unlockedLevel = G.currentLevel + 1;
+  }
+  render();
+
+  const modal = document.getElementById('victoryModal');
+  const stars = document.getElementById('victoryStars');
+  const nextBtn = document.getElementById('nextLevelBtn');
+
+  stars.textContent = '⭐⭐⭐';
+
+  if (G.currentLevel >= LEVELS.length - 1) {
+    nextBtn.textContent = '🏆 Xong!';
+    nextBtn.onclick = () => hideAllModals();
+  } else {
+    nextBtn.textContent = 'Tiếp →';
+    nextBtn.onclick = () => G.nextLevel();
+  }
+
+  modal.classList.add('active');
+  launchConfetti();
+}
+
+function triggerGameOver() {
+  G.isGameOver = true;
+  render();
+  document.getElementById('gameOverModal').classList.add('active');
+}
+
+function hideAllModals() {
+  document.getElementById('victoryModal').classList.remove('active');
+  document.getElementById('gameOverModal').classList.remove('active');
+}
+
+/* =============================================================
+   11. PUBLIC API (UI Buttons)
+   ============================================================= */
+G.resetLevel = function() {
+  hideAllModals();
+  loadLevel(G.currentLevel);
+};
+
+G.nextLevel = function() {
+  hideAllModals();
+  if (G.currentLevel < LEVELS.length - 1) {
+    loadLevel(G.currentLevel + 1);
+  }
+};
+
+G.goToLevel = function(idx) {
+  if (idx <= G.unlockedLevel || idx === G.currentLevel) {
+    hideAllModals();
+    loadLevel(idx);
+  }
+};
+
+/* =============================================================
+   12. RENDER SYSTEM
+   ============================================================= */
+function render() {
+  renderHeader();
+  renderOrders();
+  renderStations();
+  renderBoard();
+  renderStacks();
+  if (G.tutorialActive) renderTutorial();
+  else hideTutorial();
+}
+
+function renderHeader() {
+  const el = document.getElementById('header');
+  let html = '';
+  for (let i = 0; i < LEVELS.length; i++) {
+    const cls = (i === G.currentLevel ? ' active' : '') + (i > G.unlockedLevel ? ' locked' : '');
+    html += `<button class="level-btn${cls}" onclick="G.goToLevel(${i})">${i+1}</button>`;
+  }
+  html += `<div class="header-title">Lv${G.currentLevel+1}: ${LEVELS[G.currentLevel].name}</div>`;
+  html += `<button class="reset-btn" onclick="G.resetLevel()" title="Reset Level">↺</button>`;
+  el.innerHTML = html;
+}
+
+function renderOrders() {
+  const el = document.getElementById('ordersRow');
+  let html = '';
+
+  G.orders.forEach(order => {
+    const recipe = RECIPES[order.recipeId];
+    if (!recipe) return;
+    const done = order.fulfilled >= order.qty;
+
+    const ingEmojis = recipe.requirements.map(r => {
+      const ing = INGREDIENTS[r.ingredientId];
+      let stateIcon = '';
+      if (r.requiredState === 'cut') stateIcon = '<sup style="font-size:8px">✂️</sup>';
+      else if (r.requiredState === 'fry') stateIcon = '<sup style="font-size:8px">🔥</sup>';
+      return `<span>${ing ? ing.emoji : '?'}${stateIcon}</span>`;
+    }).join('');
+
+    html += `
+      <div class="order-card${done ? ' completed' : ''}">
+        <div class="order-dish">${recipe.dishEmoji}</div>
+        <div class="order-name">${recipe.name}</div>
+        <div class="order-ingredients">${ingEmojis}</div>
+        <div class="order-check">✅</div>
+      </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+function renderStations() {
+  const el = document.getElementById('stations');
+  const lvl = LEVELS[G.currentLevel];
+  let html = '';
+
+  // Cut Station
+  const cutOn = lvl.stations.cut;
+  const cutSt = G.stations.cut;
+  const cutBusy = cutSt.active && cutSt.item;
+  const cutIng = cutBusy ? INGREDIENTS[cutSt.item.ingredientId] : null;
+
+  html += `
+    <div class="station${cutOn ? '' : ' inactive'}" data-station="cut">
+      <div class="station-header">
+        <span class="station-icon">🔪</span>
+        <span class="station-label">Cắt</span>
+      </div>
+      <div class="station-slot${cutBusy ? ' occupied' : ''}">
+        ${cutBusy && cutIng ? cutIng.emoji : ''}
+      </div>
+      <div class="station-progress${cutBusy ? ' active' : ''}">
+        <div class="station-progress-fill" style="width:${cutBusy ? (cutSt.timer/CFG.PROCESS_TIME*100) : 0}%"></div>
+      </div>
+      <div class="station-steam${cutBusy ? ' active' : ''}">
+        ${cutBusy ? makeSteam() : ''}
+      </div>
+    </div>`;
+
+  // Fry Station
+  const fryOn = lvl.stations.fry;
+  const frySt = G.stations.fry;
+  const fryBusy = frySt.active && frySt.item;
+  const fryIng = fryBusy ? INGREDIENTS[frySt.item.ingredientId] : null;
+
+  html += `
+    <div class="station${fryOn ? '' : ' inactive'}" data-station="fry">
+      <div class="station-header">
+        <span class="station-icon">🍳</span>
+        <span class="station-label">Chiên</span>
+      </div>
+      <div class="station-slot${fryBusy ? ' occupied' : ''}">
+        ${fryBusy && fryIng ? fryIng.emoji : ''}
+      </div>
+      <div class="station-progress${fryBusy ? ' active' : ''}">
+        <div class="station-progress-fill" style="width:${fryBusy ? (frySt.timer/CFG.PROCESS_TIME*100) : 0}%"></div>
+      </div>
+      <div class="station-steam${fryBusy ? ' active' : ''}">
+        ${fryBusy ? makeSteam() : ''}
+      </div>
+    </div>`;
+
+  el.innerHTML = html;
+}
+
+function makeSteam() {
+  let h = '';
+  for (let i = 0; i < 5; i++) {
+    const left = 15 + Math.random() * 70;
+    const delay = (Math.random() * 1.5).toFixed(2);
+    const size = (4 + Math.random() * 6).toFixed(0);
+    h += `<div class="steam-particle" style="left:${left}%;bottom:8px;width:${size}px;height:${size}px;animation-delay:${delay}s"></div>`;
+  }
+  return h;
+}
+
+function renderBoard() {
+  const el = document.getElementById('board');
+  const lvl = LEVELS[G.currentLevel];
+  let html = '';
+
+  for (let i = 0; i < lvl.boardSlots; i++) {
+    const item = G.board[i];
+    if (item) {
+      const ing = INGREDIENTS[item.ingredientId];
+      let badge = '';
+      if (item.state === 'cut') badge = '<div class="processing-badge">✂️</div>';
+      else if (item.state === 'fry') badge = '<div class="processing-badge">🔥</div>';
+
+      html += `<div class="board-slot occupied" onclick="tapBoard(${i})" data-board-idx="${i}">
+        ${ing ? ing.emoji : '?'}${badge}
+      </div>`;
+    } else {
+      html += `<div class="board-slot empty"></div>`;
+    }
+  }
+
+  el.innerHTML = html;
+}
+
+function renderStacks() {
+  const el = document.getElementById('ingredientBar');
+  let html = '';
+
+  G.stacks.forEach((raw, idx) => {
+    const { id: ingId, state: st } = parseStackItem(raw);
+    const ing = INGREDIENTS[ingId];
+    const badge = st === 'cut' ? '<span class="state-badge">✂️</span>' :
+                  st === 'fry' ? '<span class="state-badge">🔥</span>' : '';
+    const delay = idx * 0.04;
+    html += `<div class="ingredient-chip" onclick="tapIngredient(${idx})" style="animation-delay:${delay}s">
+      ${ing ? ing.emoji : '?'}${badge}
+    </div>`;
+  });
+
+  el.innerHTML = html;
+}
+
+/* =============================================================
+   13. TUTORIAL SYSTEM
+   ============================================================= */
+function renderTutorial() {
+  const lvl = LEVELS[G.currentLevel];
+  if (!lvl.tutorial || !G.tutorialActive) {
+    hideTutorial();
+    return;
+  }
+
+  const steps = lvl.tutorial.steps;
+  if (G.tutorialStep >= steps.length) {
+    G.tutorialActive = false;
+    hideTutorial();
+    return;
+  }
+
+  const step = steps[G.tutorialStep];
+  const overlay = document.getElementById('tutorialOverlay');
+  const highlight = document.getElementById('tutorialHighlight');
+  const hand = document.getElementById('tutorialHand');
+  const msg = document.getElementById('tutorialMessage');
+
+  overlay.classList.add('active');
+
+  // Position highlight around target
+  const targetEl = findTutorialTarget(step.target);
+  if (targetEl) {
+    const r = targetEl.getBoundingClientRect();
+    const cr = document.getElementById('gameContainer').getBoundingClientRect();
+    const x = r.left - cr.left;
+    const y = r.top - cr.top;
+
+    highlight.style.left   = (x - 5) + 'px';
+    highlight.style.top    = (y - 5) + 'px';
+    highlight.style.width  = (r.width + 10) + 'px';
+    highlight.style.height = (r.height + 10) + 'px';
+    highlight.style.display = 'block';
+
+    // Hand position
+    if (step.hand === 'left') {
+      hand.style.left = (x - 22) + 'px';
+      hand.style.top  = (y + r.height / 2 - 15) + 'px';
+    } else if (step.hand === 'right') {
+      hand.style.left = (x + r.width + 6) + 'px';
+      hand.style.top  = (y + r.height / 2 - 15) + 'px';
+    } else if (step.hand === 'bottom') {
+      hand.style.left = (x + r.width / 2 - 15) + 'px';
+      hand.style.top  = (y - 30) + 'px';
+    } else {
+      hand.style.left = (x + r.width / 2 - 15) + 'px';
+      hand.style.top  = (y - 35) + 'px';
+    }
+    hand.textContent = '👇';
+  }
+
+  msg.textContent = step.msg;
+
+  // Wire up tap actions: highlight + message dispatch the correct game action
+  const handleTutorialTap = () => {
+    if (step.target === 'stack') {
+      // Tap first available ingredient
+      if (G.stacks.length > 0) tapIngredient(0);
+    } else if (step.target === 'board') {
+      // Tap first occupied board slot
+      const lvl = LEVELS[G.currentLevel];
+      for (let i = 0; i < lvl.boardSlots; i++) {
+        if (G.board[i]) { tapBoard(i); break; }
+      }
+    } else if (step.target.startsWith('station-')) {
+      advanceTutorial();
+    }
+  };
+  highlight.style.pointerEvents = 'auto';
+  highlight.onclick = handleTutorialTap;
+  // Message is purely visual — do NOT set pointer-events or onclick
+}
+
+function findTutorialTarget(targetStr) {
+  switch(targetStr) {
+    case 'stack':         return document.getElementById('ingredientBar');
+    case 'station-cut':   return document.querySelector('[data-station="cut"]');
+    case 'station-fry':   return document.querySelector('[data-station="fry"]');
+    case 'board':         return document.getElementById('board');
+    default: return null;
+  }
+}
+
+function advanceTutorial() {
+  if (!G.tutorialActive) return;
+  const lvl = LEVELS[G.currentLevel];
+  if (!lvl.tutorial) return;
+
+  G.tutorialStep++;
+  if (G.tutorialStep >= lvl.tutorial.steps.length) {
+    G.tutorialActive = false;
+  }
+}
+
+function hideTutorial() {
+  document.getElementById('tutorialOverlay').classList.remove('active');
+}
+
+/* =============================================================
+   14. CONFETTI SYSTEM (Canvas)
+   ============================================================= */
+let confettiParticles = [];
+let confettiCanvas, confettiCtx;
+let confettiAnimating = false;
+
+function setupConfettiCanvas() {
+  confettiCanvas = document.getElementById('confettiCanvas');
+  confettiCtx = confettiCanvas.getContext('2d');
+  resizeConfetti();
+  window.addEventListener('resize', resizeConfetti);
+}
+
+function resizeConfetti() {
+  const c = document.getElementById('gameContainer');
+  confettiCanvas.width = c.offsetWidth;
+  confettiCanvas.height = c.offsetHeight;
+}
+
+function launchConfetti() {
+  confettiParticles = [];
+  const colors = CFG.CONFETTI_COLORS;
+
+  for (let i = 0; i < CFG.CONFETTI_COUNT; i++) {
+    confettiParticles.push({
+      x: confettiCanvas.width / 2 + (Math.random() - 0.5) * 120,
+      y: confettiCanvas.height * 0.35,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -Math.random() * 14 - 5,
+      w: 5 + Math.random() * 7,
+      h: 3 + Math.random() * 5,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      rotation: Math.random() * 360,
+      rotSpeed: (Math.random() - 0.5) * 14,
+      gravity: 0.28 + Math.random() * 0.15,
+      opacity: 1,
+      shape: Math.random() > 0.5 ? 'rect' : 'circle',
+    });
+  }
+
+  if (!confettiAnimating) {
+    confettiAnimating = true;
+    animateConfetti();
+  }
+}
+
+function animateConfetti() {
+  confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+
+  let alive = 0;
+  confettiParticles.forEach(p => {
+    if (p.opacity <= 0) return;
+    alive++;
+
+    p.x += p.vx;
+    p.vy += p.gravity;
+    p.y += p.vy;
+    p.vx *= 0.98;
+    p.rotation += p.rotSpeed;
+
+    if (p.y > confettiCanvas.height * 0.65) {
+      p.opacity -= 0.025;
+    }
+
+    confettiCtx.save();
+    confettiCtx.globalAlpha = Math.max(p.opacity, 0);
+    confettiCtx.translate(p.x, p.y);
+    confettiCtx.rotate(p.rotation * Math.PI / 180);
+    confettiCtx.fillStyle = p.color;
+
+    if (p.shape === 'rect') {
+      confettiCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    } else {
+      confettiCtx.beginPath();
+      confettiCtx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+      confettiCtx.fill();
+    }
+    confettiCtx.restore();
+  });
+
+  if (alive > 0) {
+    requestAnimationFrame(animateConfetti);
+  } else {
+    confettiAnimating = false;
+    confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+  }
+}
+
+/* =============================================================
+   15. SCORE POPUP EFFECT
+   ============================================================= */
+function showScorePopup(text) {
+  const board = document.getElementById('board');
+  const popup = document.createElement('div');
+  popup.className = 'score-popup';
+  popup.textContent = text;
+  popup.style.left = '50%';
+  popup.style.top = '0px';
+  popup.style.transform = 'translateX(-50%)';
+  board.style.position = 'relative';
+  board.appendChild(popup);
+  setTimeout(() => popup.remove(), 900);
+}
+
+/* =============================================================
+   16. BOOTSTRAP
+   ============================================================= */
+window.addEventListener('DOMContentLoaded', initGame);
+</script>
+</body>
+</html>
