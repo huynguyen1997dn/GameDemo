@@ -1191,18 +1191,23 @@ function dispatchStationToBoard(stationId, stationObj) {
   const lvl = LEVELS[G.currentLevel];
   const newState = stationId;
 
-  if (G.board.length < lvl.boardSlots) {
-    G.board.push({
-      id: Date.now() + Math.random(),
-      ingredientId: stationObj.item.ingredientId,
-      state: newState,
-    });
-  }
-
+  // Clear station first
+  const itemData = { ingredientId: stationObj.item.ingredientId, state: newState };
   stationObj.item = null;
   stationObj.timer = 0;
   stationObj.active = false;
   stationObj.steamHtml = '';
+
+  if (G.board.length < lvl.boardSlots) {
+    G.board.push({
+      id: Date.now() + Math.random(),
+      ...itemData,
+    });
+  } else {
+    // Board full → item stuck → game over
+    setTimeout(() => triggerGameOver(), 300);
+    return;
+  }
 
   // Advance tutorial when station completes
   if (G.tutorialActive) {
